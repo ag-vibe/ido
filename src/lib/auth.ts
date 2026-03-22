@@ -1,4 +1,4 @@
-import { ofetch } from "ofetch";
+import { FetchError, ofetch } from "ofetch";
 
 const STORAGE_KEY = "flodo.auth.v1";
 const REFRESH_LEEWAY_MS = 60 * 1000;
@@ -108,8 +108,17 @@ export async function refreshAuthSession(): Promise<AuthSession | null> {
 
       setAuthSession(nextSession);
       return nextSession;
-    } catch {
-      clearToken();
+    } catch (err) {
+      // Only clear the token if this is a definitive auth failure (refresh token
+      // rejected by the server). Network errors and 5xx should NOT log the user
+      // out — the token may still be valid once connectivity is restored.
+      const isAuthFailure =
+        err instanceof FetchError &&
+        err.response != null &&
+        err.response.status < 500;
+      if (isAuthFailure) {
+        clearToken();
+      }
       return null;
     } finally {
       refreshInFlight = null;

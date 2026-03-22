@@ -85,10 +85,10 @@ const TodoCard: React.FC<TodoCardProps> = React.memo(
           }}
           aria-label={todo.done ? "Mark as not done" : "Mark as done"}
           data-testid="todo-toggle"
-          className="flex h-4 w-4 flex-none items-center justify-center rounded-sm border border-[var(--checkbox-border)] bg-transparent"
+          className="flex h-4 w-4 flex-none items-center justify-center rounded-sm border border-(--checkbox-border) bg-transparent"
         >
           {todo.done && (
-            <span className="block h-2.5 w-2.5 rounded-[3px] bg-[var(--checkbox-fill)]" />
+            <span className="block h-2.5 w-2.5 rounded-[3px] bg-(--checkbox-fill)" />
           )}
         </button>
         {editing ? (
@@ -303,7 +303,7 @@ export const FlodoBoard: React.FC = () => {
   if (isError) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-(--bg-base) px-4">
-        <p className="text-xs text-red-500">Failed to load todos. Is the backend running?</p>
+        <p className="text-xs text-(--sea-ink-soft)">Something went wrong. Please try again.</p>
       </main>
     );
   }
@@ -317,7 +317,7 @@ export const FlodoBoard: React.FC = () => {
         <SyncStatus />
       </div>
       <section className="flex flex-1 flex-col overflow-hidden bg-(--surface)">
-        <div className="grid min-h-screen grid-cols-1 divide-y divide-[var(--col-divider)] sm:grid-cols-2 sm:divide-y-0 sm:divide-x lg:grid-cols-4">
+        <div className="grid min-h-screen grid-cols-1 divide-y divide-(--col-divider) sm:grid-cols-2 sm:divide-y-0 sm:divide-x lg:grid-cols-4">
           {BUCKETS.map((bucket) => {
             const items = bucketItems(todos, bucket.id);
 
@@ -347,15 +347,15 @@ export const FlodoBoard: React.FC = () => {
                 <div className="flex flex-1 flex-col px-5 pb-5">
                   {bucket.id === "later" && (
                     <form onSubmit={handleSubmit} className="mb-1.5">
-                      <div className="flex items-center gap-2 py-2 border-b border-dashed border-[var(--row-border)]">
-                        <span className="h-4 w-4 flex-none rounded-sm border border-[var(--checkbox-border)] bg-transparent" />
+                      <div className="flex items-center gap-2 py-2 border-b border-dashed border-(--row-border)">
+                        <span className="h-4 w-4 flex-none rounded-sm border border-(--checkbox-border) bg-transparent" />
                         <input
                           type="text"
                           value={draft}
                           onChange={(e) => setDraft(e.target.value)}
                           placeholder="Add a task"
                           data-testid="todo-new-input"
-                          className="flex-1 border-none bg-transparent text-xs leading-snug text-(--sea-ink) placeholder:text-[var(--placeholder-text)] focus:outline-none focus:ring-0 sm:text-[13px]"
+                          className="flex-1 border-none bg-transparent text-xs leading-snug text-(--sea-ink) placeholder:text-(--placeholder-text) focus:outline-none focus:ring-0 sm:text-[13px]"
                         />
                       </div>
                     </form>

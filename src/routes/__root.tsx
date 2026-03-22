@@ -1,9 +1,14 @@
-import { HeadContent, Scripts, createRootRouteWithContext, redirect } from "@tanstack/react-router";
+import { HeadContent, Scripts, createRootRouteWithContext, redirect, useRouter } from "@tanstack/react-router";
 import TanStackQueryProvider from "../integrations/tanstack-query/root-provider";
 import appCss from "../styles.css?url";
-import { getToken } from "../lib/auth";
-import "../lib/api-auth-refresh";
+import { getToken, subscribeAuth } from "../lib/auth";
+import { installAuthInterceptors } from "../lib/client.config";
+import { client as todoClient } from "../api-gen/client.gen";
+import { client as anclaxClient } from "../api-anclax/client.gen";
 import UpdatePrompt from "../components/UpdatePrompt";
+import { useEffect } from "react";
+
+installAuthInterceptors(todoClient, anclaxClient);
 
 import type { QueryClient } from "@tanstack/react-query";
 
@@ -54,6 +59,16 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 });
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+
+  useEffect(() => {
+    return subscribeAuth(() => {
+      if (!getToken()) {
+        void router.navigate({ to: "/login" });
+      }
+    });
+  }, [router]);
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
