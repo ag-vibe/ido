@@ -5,38 +5,186 @@
 
 :root {
   /* base colors - warm notebook surface */
-  --bg-base: #f3f1ea;         /* 整个页面的纸张背景 */
-  --surface: #f8f5ee;         /* 中央面板 */
+  --bg-base: #f3f1ea;
+  /* 整个页面的纸张背景 */
+  --surface: #f8f5ee;
+  /* 中央面板 */
   --surface-strong: #f8f5ee;
-  --line: rgba(87, 83, 78, 0.36); /* 棕灰色分割线 */
+  --line: rgba(87, 83, 78, 0.36);
+  /* 棕灰色分割线 */
 
-  --sea-ink: #2c261f;         /* 深棕墨色文字 */
-  --sea-ink-soft: #8b8173;    /* 次级文字 */
-  --foam: #fdfaf3;            /* 浅纸色高亮 */
+  --sea-ink: #2c261f;
+  /* 深棕墨色文字 */
+  --sea-ink-soft: #8b8173;
+  /* 次级文字 */
+  --foam: #fdfaf3;
+  /* 浅纸色高亮 */
+
+  /* component tokens */
+  --header-bg: rgba(243, 241, 234, 0.88);
+  --chip-bg: rgba(248, 245, 238, 0.9);
+  --chip-line: rgba(203, 192, 173, 0.7);
+  --link-bg-hover: rgba(44, 38, 31, 0.06);
+
+  /* board / row tokens */
+  --row-border: rgba(203, 192, 173, 0.8);
+  --col-divider: rgba(214, 204, 187, 0.9);
+  --checkbox-border: rgba(203, 192, 173, 0.95);
+  --checkbox-fill: rgba(44, 38, 31, 0.9);
+  --drag-bg: rgba(44, 38, 31, 0.02);
+  --placeholder-text: rgba(139, 129, 115, 0.9);
+  --strike-color: rgba(139, 129, 115, 0.6);
+
+  /* decorative glows (login page) */
+  --glow-a: rgba(191, 170, 140, 0.22);
+  --glow-b: rgba(164, 143, 121, 0.20);
+
+  /* form / input tokens */
+  --input-bg: rgba(255, 252, 247, 0.86);
+  --input-border: rgba(179, 161, 136, 0.5);
+  --input-border-focus: rgba(109, 93, 72, 0.78);
+  --input-ring-focus: rgba(109, 93, 72, 0.15);
+  --input-placeholder: rgba(139, 129, 115, 0.95);
+
+  /* card / panel tokens (login page) */
+  --card-bg: rgba(248, 245, 238, 0.78);
+  --card-border: rgba(179, 161, 136, 0.45);
+  --card-shadow: rgba(44, 38, 31, 0.14);
+  --label-muted: rgba(99, 88, 72, 0.75);
+  --tab-bg: rgba(250, 247, 241, 0.85);
+  --tab-border: rgba(179, 161, 136, 0.45);
+
+  /* error tokens */
+  --error-bg: rgba(247, 223, 223, 0.5);
+  --error-border: rgba(214, 95, 95, 0.35);
+  --error-text: rgba(140, 52, 52, 0.95);
+
+  /* button tokens */
+  --btn-tint: rgba(44, 38, 31, 0.08);
+  --btn-tint-hover: rgba(44, 38, 31, 0.14);
+  --btn-shadow: rgba(44, 38, 31, 0.24);
+  --btn-shadow-hover: rgba(44, 38, 31, 0.28);
+  --btn-primary-text: rgba(255, 251, 243, 0.95);
 }
 
 :root.dark,
 :root[data-theme="dark"] {
-  --bg-base: #111827;
-  --surface: #020617;
-  --surface-strong: #020617;
-  --line: rgba(156, 163, 175, 0.4);
+  --bg-base: #1c1b1a;
+  /* 暖深灰，不偏蓝 */
+  --surface: #141312;
+  /* 更深的暖灰 */
+  --surface-strong: #141312;
+  --line: rgba(120, 113, 108, 0.35);
 
-  --sea-ink: #e5e7eb;
-  --sea-ink-soft: #9ca3af;
-  --foam: #020617;
+  --sea-ink: #e8e5e0;
+  /* 暖白 */
+  --sea-ink-soft: #a09890;
+  /* 暖哑色 */
+  --foam: #141312;
+
+  /* component tokens */
+  --header-bg: rgba(28, 27, 26, 0.88);
+  --chip-bg: rgba(20, 19, 18, 0.9);
+  --chip-line: rgba(90, 83, 75, 0.7);
+  --link-bg-hover: rgba(255, 252, 248, 0.07);
+
+  /* board / row tokens */
+  --row-border: rgba(80, 73, 65, 0.6);
+  --col-divider: rgba(60, 54, 48, 0.8);
+  --checkbox-border: rgba(90, 83, 75, 0.8);
+  --checkbox-fill: rgba(232, 229, 224, 0.9);
+  --drag-bg: rgba(255, 252, 248, 0.04);
+  --placeholder-text: rgba(110, 102, 93, 0.9);
+  --strike-color: rgba(110, 102, 93, 0.6);
+
+  /* decorative glows (login page) */
+  --glow-a: rgba(180, 140, 80, 0.10);
+  --glow-b: rgba(140, 100, 60, 0.08);
+
+  /* form / input tokens */
+  --input-bg: rgba(20, 19, 18, 0.86);
+  --input-border: rgba(70, 63, 55, 0.7);
+  --input-border-focus: rgba(160, 152, 140, 0.6);
+  --input-ring-focus: rgba(160, 152, 140, 0.2);
+  --input-placeholder: rgba(110, 102, 93, 0.9);
+
+  /* card / panel tokens (login page) */
+  --card-bg: rgba(28, 27, 26, 0.85);
+  --card-border: rgba(60, 54, 48, 0.6);
+  --card-shadow: rgba(0, 0, 0, 0.5);
+  --label-muted: rgba(160, 152, 140, 0.75);
+  --tab-bg: rgba(14, 13, 12, 0.85);
+  --tab-border: rgba(60, 54, 48, 0.6);
+
+  /* error tokens */
+  --error-bg: rgba(60, 20, 20, 0.5);
+  --error-border: rgba(185, 28, 28, 0.5);
+  --error-text: rgba(252, 165, 165, 1);
+
+  /* button tokens */
+  --btn-tint: rgba(255, 252, 248, 0.07);
+  --btn-tint-hover: rgba(255, 252, 248, 0.12);
+  --btn-shadow: rgba(0, 0, 0, 0.4);
+  --btn-shadow-hover: rgba(0, 0, 0, 0.5);
+  --btn-primary-text: rgba(232, 229, 224, 0.95);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg-base: #111827;
-    --surface: #020617;
-    --surface-strong: #020617;
-    --line: rgba(156, 163, 175, 0.4);
+    --bg-base: #1c1b1a;
+    --surface: #141312;
+    --surface-strong: #141312;
+    --line: rgba(120, 113, 108, 0.35);
 
-    --sea-ink: #e5e7eb;
-    --sea-ink-soft: #9ca3af;
-    --foam: #020617;
+    --sea-ink: #e8e5e0;
+    --sea-ink-soft: #a09890;
+    --foam: #141312;
+
+    /* component tokens */
+    --header-bg: rgba(28, 27, 26, 0.88);
+    --chip-bg: rgba(20, 19, 18, 0.9);
+    --chip-line: rgba(90, 83, 75, 0.7);
+    --link-bg-hover: rgba(255, 252, 248, 0.07);
+
+    /* board / row tokens */
+    --row-border: rgba(80, 73, 65, 0.6);
+    --col-divider: rgba(60, 54, 48, 0.8);
+    --checkbox-border: rgba(90, 83, 75, 0.8);
+    --checkbox-fill: rgba(232, 229, 224, 0.9);
+    --drag-bg: rgba(255, 252, 248, 0.04);
+    --placeholder-text: rgba(110, 102, 93, 0.9);
+    --strike-color: rgba(110, 102, 93, 0.6);
+
+    /* decorative glows (login page) */
+    --glow-a: rgba(180, 140, 80, 0.10);
+    --glow-b: rgba(140, 100, 60, 0.08);
+
+    /* form / input tokens */
+    --input-bg: rgba(20, 19, 18, 0.86);
+    --input-border: rgba(70, 63, 55, 0.7);
+    --input-border-focus: rgba(160, 152, 140, 0.6);
+    --input-ring-focus: rgba(160, 152, 140, 0.2);
+    --input-placeholder: rgba(110, 102, 93, 0.9);
+
+    /* card / panel tokens (login page) */
+    --card-bg: rgba(28, 27, 26, 0.85);
+    --card-border: rgba(60, 54, 48, 0.6);
+    --card-shadow: rgba(0, 0, 0, 0.5);
+    --label-muted: rgba(160, 152, 140, 0.75);
+    --tab-bg: rgba(14, 13, 12, 0.85);
+    --tab-border: rgba(60, 54, 48, 0.6);
+
+    /* error tokens */
+    --error-bg: rgba(60, 20, 20, 0.5);
+    --error-border: rgba(185, 28, 28, 0.5);
+    --error-text: rgba(252, 165, 165, 1);
+
+    /* button tokens */
+    --btn-tint: rgba(255, 252, 248, 0.07);
+    --btn-tint-hover: rgba(255, 252, 248, 0.12);
+    --btn-shadow: rgba(0, 0, 0, 0.4);
+    --btn-shadow-hover: rgba(0, 0, 0, 0.5);
+    --btn-primary-text: rgba(232, 229, 224, 0.95);
   }
 }
 

@@ -47,11 +47,11 @@ const TodoCard: React.FC<TodoCardProps> = React.memo(
     const [editValue, setEditValue] = useState("");
 
     const rowBase =
-      "group flex items-center gap-3 py-2 border-b border-dashed border-[rgba(203,192,173,0.8)] cursor-pointer select-none";
-    const dragging = "bg-[rgba(44,38,31,0.02)] opacity-80";
+      "group flex items-center gap-3 py-2 border-b border-dashed border-[var(--row-border)] cursor-pointer select-none";
+    const dragging = "bg-[var(--drag-bg)] opacity-80";
 
     const textClass = todo.done
-      ? "flex-1 break-words text-xs leading-snug text-(--sea-ink-soft) line-through decoration-[rgba(139,129,115,0.6)] sm:text-[13px]"
+      ? "flex-1 break-words text-xs leading-snug text-(--sea-ink-soft) line-through decoration-[var(--strike-color)] sm:text-[13px]"
       : "flex-1 break-words text-xs leading-snug text-(--sea-ink) sm:text-[13px]";
 
     const startEdit = () => {
@@ -85,10 +85,10 @@ const TodoCard: React.FC<TodoCardProps> = React.memo(
           }}
           aria-label={todo.done ? "Mark as not done" : "Mark as done"}
           data-testid="todo-toggle"
-          className="flex h-4 w-4 flex-none items-center justify-center rounded-sm border border-[rgba(203,192,173,0.95)] bg-transparent"
+          className="flex h-4 w-4 flex-none items-center justify-center rounded-sm border border-[var(--checkbox-border)] bg-transparent"
         >
           {todo.done && (
-            <span className="block h-2.5 w-2.5 rounded-[3px] bg-[rgba(44,38,31,0.9)]" />
+            <span className="block h-2.5 w-2.5 rounded-[3px] bg-[var(--checkbox-fill)]" />
           )}
         </button>
         {editing ? (
@@ -317,7 +317,7 @@ export const FlodoBoard: React.FC = () => {
         <SyncStatus />
       </div>
       <section className="flex flex-1 flex-col overflow-hidden bg-(--surface)">
-        <div className="grid min-h-screen grid-cols-1 divide-y divide-[rgba(214,204,187,0.9)] sm:grid-cols-2 sm:divide-y-0 sm:divide-x lg:grid-cols-4">
+        <div className="grid min-h-screen grid-cols-1 divide-y divide-[var(--col-divider)] sm:grid-cols-2 sm:divide-y-0 sm:divide-x lg:grid-cols-4">
           {BUCKETS.map((bucket) => {
             const items = bucketItems(todos, bucket.id);
 
@@ -347,15 +347,15 @@ export const FlodoBoard: React.FC = () => {
                 <div className="flex flex-1 flex-col px-5 pb-5">
                   {bucket.id === "later" && (
                     <form onSubmit={handleSubmit} className="mb-1.5">
-                      <div className="flex items-center gap-2 py-2 border-b border-dashed border-[rgba(203,192,173,0.8)]">
-                        <span className="h-4 w-4 flex-none rounded-sm border border-[rgba(203,192,173,0.95)] bg-transparent" />
+                      <div className="flex items-center gap-2 py-2 border-b border-dashed border-[var(--row-border)]">
+                        <span className="h-4 w-4 flex-none rounded-sm border border-[var(--checkbox-border)] bg-transparent" />
                         <input
                           type="text"
                           value={draft}
                           onChange={(e) => setDraft(e.target.value)}
                           placeholder="Add a task"
                           data-testid="todo-new-input"
-                          className="flex-1 border-none bg-transparent text-xs leading-snug text-(--sea-ink) placeholder:text-[rgba(139,129,115,0.9)] focus:outline-none focus:ring-0 sm:text-[13px]"
+                          className="flex-1 border-none bg-transparent text-xs leading-snug text-(--sea-ink) placeholder:text-[var(--placeholder-text)] focus:outline-none focus:ring-0 sm:text-[13px]"
                         />
                       </div>
                     </form>

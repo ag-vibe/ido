@@ -12,3 +12,4 @@ dist-ssr
 __unconfig*
 todos.json
 e2e/artifacts
+dev-dist

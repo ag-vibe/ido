@@ -3,6 +3,7 @@ import TanStackQueryProvider from "../integrations/tanstack-query/root-provider"
 import appCss from "../styles.css?url";
 import { getToken } from "../lib/auth";
 import "../lib/api-auth-refresh";
+import UpdatePrompt from "../components/UpdatePrompt";
 
 import type { QueryClient } from "@tanstack/react-query";
 
@@ -29,14 +30,24 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         content: "width=device-width, initial-scale=1",
       },
       {
-        title: "flodo",
+        title: "ido",
       },
+      // PWA meta tags
+      { name: "theme-color", content: "#cbc0ad" },
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "default" },
+      { name: "apple-mobile-web-app-title", content: "ido" },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
       },
+      // Manually inject the PWA manifest — TanStack Start renders the HTML
+      // shell via React so Vite's HTML transform (injectRegister:"auto") never runs.
+      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "apple-touch-icon", href: "/logo192.png" },
     ],
   }),
   shellComponent: RootDocument,
@@ -51,6 +62,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body className="font-sans antialiased wrap-anywhere">
         <TanStackQueryProvider>{children}</TanStackQueryProvider>
+        <UpdatePrompt />
         <Scripts />
       </body>
     </html>
