@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import ThemeToggle from "./ThemeToggle";
+import SyncStatus from "./SyncStatus";
 
 export default function Header() {
   return (
@@ -45,6 +46,7 @@ export default function Header() {
             </svg>
           </a>
 
+          <SyncStatus />
           <ThemeToggle />
         </div>
 

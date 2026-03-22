@@ -12,6 +12,7 @@ import {
   updateTodoMutation,
 } from "@/api-gen/@tanstack/react-query.gen";
 import type { TodoItem } from "@/api-gen/types.gen";
+import { drainQueue, enqueue, opId } from "@/lib/pending-sync";
 
 // The backend uses "week" (not "thisWeek"), and done is a boolean field.
 // Column mapping: Later = !done && bucket==="later"
@@ -133,18 +134,73 @@ export const FlodoBoard: React.FC = () => {
 
   const { data: todos = [], isLoading, isError } = useQuery(listTodosOptions());
 
+  // --- Optimistic update helpers ---
+  const optimisticAdd = (item: TodoItem) => {
+    queryClient.setQueryData<TodoItem[]>(listTodosQueryKey(), (prev = []) => [item, ...prev]);
+  };
+  const optimisticUpdate = (id: string, patch: Partial<TodoItem>) => {
+    queryClient.setQueryData<TodoItem[]>(listTodosQueryKey(), (prev = []) =>
+      prev.map((t) => (t.id === id ? { ...t, ...patch } : t))
+    );
+  };
+  const optimisticRemove = (id: string) => {
+    queryClient.setQueryData<TodoItem[]>(listTodosQueryKey(), (prev = []) =>
+      prev.filter((t) => t.id !== id)
+    );
+  };
+
   const createMutation = useMutation({
     ...createTodoMutation(),
+    onMutate: async ({ body }) => {
+      await queryClient.cancelQueries({ queryKey: listTodosQueryKey() });
+      const snapshot = queryClient.getQueryData<TodoItem[]>(listTodosQueryKey());
+      const tempItem: TodoItem = {
+        id: `temp-${Date.now()}`,
+        title: body.title,
+        bucket: "later",
+        done: false,
+        createdAt: new Date().toISOString(),
+      };
+      optimisticAdd(tempItem);
+      return { snapshot, tempId: tempItem.id };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.snapshot) {
+        queryClient.setQueryData(listTodosQueryKey(), ctx.snapshot);
+      }
+    },
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: listTodosQueryKey() }),
   });
 
   const updateMutation = useMutation({
     ...updateTodoMutation(),
+    onMutate: async ({ path, body }) => {
+      await queryClient.cancelQueries({ queryKey: listTodosQueryKey() });
+      const snapshot = queryClient.getQueryData<TodoItem[]>(listTodosQueryKey());
+      optimisticUpdate(path.id, body);
+      return { snapshot };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.snapshot) {
+        queryClient.setQueryData(listTodosQueryKey(), ctx.snapshot);
+      }
+    },
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: listTodosQueryKey() }),
   });
 
   const deleteMutation = useMutation({
     ...deleteTodoMutation(),
+    onMutate: async ({ path }) => {
+      await queryClient.cancelQueries({ queryKey: listTodosQueryKey() });
+      const snapshot = queryClient.getQueryData<TodoItem[]>(listTodosQueryKey());
+      optimisticRemove(path.id);
+      return { snapshot };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.snapshot) {
+        queryClient.setQueryData(listTodosQueryKey(), ctx.snapshot);
+      }
+    },
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: listTodosQueryKey() }),
   });
 
@@ -159,14 +215,31 @@ export const FlodoBoard: React.FC = () => {
     );
   }, []);
 
+  // Drain pending queue on reconnect (or on mount if already online)
+  useEffect(() => {
+    const handleOnline = () => void drainQueue(queryClient);
+    window.addEventListener("online", handleOnline);
+    if (navigator.onLine) void drainQueue(queryClient);
+    return () => window.removeEventListener("online", handleOnline);
+  }, [queryClient]);
+
   const handleSubmit = useCallback(
     (event: React.FormEvent) => {
       event.preventDefault();
       const title = draft.trim();
       if (!title) return;
+      if (!navigator.onLine) {
+        const tempId = `temp-${Date.now()}`;
+        const tempItem: TodoItem = { id: tempId, title, bucket: "later", done: false, createdAt: new Date().toISOString() };
+        optimisticAdd(tempItem);
+        enqueue({ id: opId(), type: "create", title, tempId });
+        setDraft("");
+        return;
+      }
       createMutation.mutate({ body: { title } });
       setDraft("");
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [draft, createMutation]
   );
 
@@ -190,6 +263,15 @@ export const FlodoBoard: React.FC = () => {
         setDraggingId(null);
         if (!id) return;
 
+        const patch = bucketId === "done"
+          ? { done: true as const }
+          : { bucket: bucketId as TodoItem["bucket"], done: false as const };
+
+        if (!navigator.onLine) {
+          optimisticUpdate(id, patch);
+          enqueue({ id: opId(), type: "update", todoId: id, patch });
+          return;
+        }
         if (bucketId === "done") {
           updateMutation.mutate({ body: { done: true }, path: { id } });
         } else {
@@ -197,6 +279,7 @@ export const FlodoBoard: React.FC = () => {
         }
       };
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [updateMutation]
   );
 
@@ -283,21 +366,32 @@ export const FlodoBoard: React.FC = () => {
                           isDragging={draggingId === todo.id}
                           onDragStart={handleDragStart(todo.id)}
                           onDragEnd={handleDragEnd}
-                          onToggleDone={() =>
-                            updateMutation.mutate({
-                              body: { done: !todo.done },
-                              path: { id: todo.id },
-                            })
-                          }
-                          onDelete={() =>
-                            deleteMutation.mutate({ path: { id: todo.id } })
-                          }
-                          onRename={(title) =>
-                            updateMutation.mutate({
-                              body: { title },
-                              path: { id: todo.id },
-                            })
-                          }
+                          onToggleDone={() => {
+                            const patch = { done: !todo.done };
+                            if (!navigator.onLine) {
+                              optimisticUpdate(todo.id, patch);
+                              enqueue({ id: opId(), type: "update", todoId: todo.id, patch });
+                              return;
+                            }
+                            updateMutation.mutate({ body: patch, path: { id: todo.id } });
+                          }}
+                          onDelete={() => {
+                            if (!navigator.onLine) {
+                              optimisticRemove(todo.id);
+                              enqueue({ id: opId(), type: "delete", todoId: todo.id });
+                              return;
+                            }
+                            deleteMutation.mutate({ path: { id: todo.id } });
+                          }}
+                          onRename={(title) => {
+                            const patch = { title };
+                            if (!navigator.onLine) {
+                              optimisticUpdate(todo.id, patch);
+                              enqueue({ id: opId(), type: "update", todoId: todo.id, patch });
+                              return;
+                            }
+                            updateMutation.mutate({ body: patch, path: { id: todo.id } });
+                          }}
                         />
                       ))}
                     </div>

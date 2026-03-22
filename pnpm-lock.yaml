@@ -18,6 +18,12 @@ importers:
       '@tailwindcss/vite':
         specifier: ^4.1.18
         version: 4.2.2(@voidzero-dev/vite-plus-core@0.1.13(@types/node@22.19.15)(esbuild@0.27.4)(jiti@2.6.1)(tsx@4.21.0)(typescript@5.9.3))
+      '@tanstack/query-persist-client-core':
+        specifier: ^5.94.5
+        version: 5.94.5
+      '@tanstack/query-sync-storage-persister':
+        specifier: ^5.94.5
+        version: 5.94.5
       '@tanstack/react-devtools':
         specifier: latest
         version: 0.10.0(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(csstype@3.2.3)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(solid-js@1.9.11)
@@ -1061,6 +1067,12 @@ packages:
 
   '@tanstack/query-devtools@5.94.5':
     resolution: {integrity: sha512-rjn7mdo9wdB9AhthaOkwT3uLn15DrkDOI9Nyg6vU8BXi8/VsQSUvv1g0L0AdAaFH/4VDaBDe7SQSxqlTwMu1Mw==}
+
+  '@tanstack/query-persist-client-core@5.94.5':
+    resolution: {integrity: sha512-ZOohchCU4bLgTS1PtOMEpUHECrNBisBYPnKBbfrMqKYAhMGH7C0v4W7SKt8oQBx5O2pX7mwvzmHrkJhhF4S+aA==}
+
+  '@tanstack/query-sync-storage-persister@5.94.5':
+    resolution: {integrity: sha512-iSPizrD+l6E2JA7guvhqtYnRB8ATtFtey3JTtBBz3BNR9woJokQKhDj/o8yxxT12gP9D7tavAgwLSFCTDbu2FA==}
 
   '@tanstack/react-devtools@0.10.0':
     resolution: {integrity: sha512-cUMzOQb1IHmkb8MsD0TrxHT8EL92Rx3G0Huq+IFkWeoaZPGlIiaIcGTpS5VvQDeI4BVUT+ZGt6CQTpx8oSTECg==}
@@ -3272,6 +3284,15 @@ snapshots:
   '@tanstack/query-core@5.94.5': {}
 
   '@tanstack/query-devtools@5.94.5': {}
+
+  '@tanstack/query-persist-client-core@5.94.5':
+    dependencies:
+      '@tanstack/query-core': 5.94.5
+
+  '@tanstack/query-sync-storage-persister@5.94.5':
+    dependencies:
+      '@tanstack/query-core': 5.94.5
+      '@tanstack/query-persist-client-core': 5.94.5
 
   '@tanstack/react-devtools@0.10.0(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(csstype@3.2.3)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(solid-js@1.9.11)':
     dependencies:
