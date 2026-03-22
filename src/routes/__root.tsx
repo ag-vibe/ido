@@ -2,6 +2,7 @@ import { HeadContent, Scripts, createRootRouteWithContext, redirect } from "@tan
 import TanStackQueryProvider from "../integrations/tanstack-query/root-provider";
 import appCss from "../styles.css?url";
 import { getToken } from "../lib/auth";
+import "../lib/api-auth-refresh";
 
 import type { QueryClient } from "@tanstack/react-query";
 

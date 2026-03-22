@@ -24,6 +24,7 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
  */
 export const listTodos = <ThrowOnError extends boolean = false>(options?: Options<ListTodosData, ThrowOnError>) => (options?.client ?? client).get<ListTodosResponses, unknown, ThrowOnError>({
     requestValidator: async (data) => await zListTodosData.parseAsync(data),
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/todos',
     ...options
 });
@@ -33,6 +34,7 @@ export const listTodos = <ThrowOnError extends boolean = false>(options?: Option
  */
 export const createTodo = <ThrowOnError extends boolean = false>(options: Options<CreateTodoData, ThrowOnError>) => (options.client ?? client).post<CreateTodoResponses, unknown, ThrowOnError>({
     requestValidator: async (data) => await zCreateTodoData.parseAsync(data),
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/todos',
     ...options,
     headers: {
@@ -46,6 +48,7 @@ export const createTodo = <ThrowOnError extends boolean = false>(options: Option
  */
 export const deleteTodo = <ThrowOnError extends boolean = false>(options: Options<DeleteTodoData, ThrowOnError>) => (options.client ?? client).delete<DeleteTodoResponses, DeleteTodoErrors, ThrowOnError>({
     requestValidator: async (data) => await zDeleteTodoData.parseAsync(data),
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/todos/{id}',
     ...options
 });
@@ -55,6 +58,7 @@ export const deleteTodo = <ThrowOnError extends boolean = false>(options: Option
  */
 export const updateTodo = <ThrowOnError extends boolean = false>(options: Options<UpdateTodoData, ThrowOnError>) => (options.client ?? client).patch<UpdateTodoResponses, UpdateTodoErrors, ThrowOnError>({
     requestValidator: async (data) => await zUpdateTodoData.parseAsync(data),
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/todos/{id}',
     ...options,
     headers: {

@@ -2,30 +2,30 @@
 
 import * as z from 'zod';
 
+export const zCreateTodoRequest = z.object({
+    title: z.string()
+});
+
 export const zTodoItem = z.object({
-    id: z.uuid(),
-    title: z.string(),
-    done: z.boolean(),
     bucket: z.enum([
         'later',
         'week',
         'today'
     ]),
-    createdAt: z.iso.datetime()
-});
-
-export const zCreateTodoRequest = z.object({
+    createdAt: z.iso.datetime(),
+    done: z.boolean(),
+    id: z.uuid(),
     title: z.string()
 });
 
 export const zUpdateTodoRequest = z.object({
-    title: z.string().optional(),
-    done: z.boolean().optional(),
     bucket: z.enum([
         'later',
         'week',
         'today'
-    ]).optional()
+    ]).optional(),
+    done: z.boolean().optional(),
+    title: z.string().optional()
 });
 
 export const zListTodosData = z.object({

@@ -4,22 +4,22 @@ export type ClientOptions = {
     baseUrl: `${string}://${string}/api/v1` | (string & {});
 };
 
-export type TodoItem = {
-    id: string;
-    title: string;
-    done: boolean;
-    bucket: 'later' | 'week' | 'today';
-    createdAt: string;
-};
-
 export type CreateTodoRequest = {
     title: string;
 };
 
+export type TodoItem = {
+    bucket: 'later' | 'week' | 'today';
+    createdAt: string;
+    done: boolean;
+    id: string;
+    title: string;
+};
+
 export type UpdateTodoRequest = {
-    title?: string;
-    done?: boolean;
     bucket?: 'later' | 'week' | 'today';
+    done?: boolean;
+    title?: string;
 };
 
 export type ListTodosData = {

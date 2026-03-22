@@ -2,14 +2,18 @@ import { defineConfig } from "@hey-api/openapi-ts";
 
 export default defineConfig({
   input: [
-    "../allinone/api/v1.yaml",
-    "https://raw.githubusercontent.com/cloudcarver/anclax/refs/tags/v0.9.1/api/v1.yaml"
+    "../allinone/api/todo.gen.yaml",
+    "https://raw.githubusercontent.com/cloudcarver/anclax/refs/tags/v0.9.1/api/v1.yaml",
   ],
-  output: {
+  output: [{
     path: "./src/api-gen",
     clean: true,
     preferExportAll: true,
-  },
+  }, {
+    path: "./src/api-anclax",
+    clean: true,
+    preferExportAll: true,
+  }],
   parser: {
     filters: {
       operations: {

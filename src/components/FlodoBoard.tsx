@@ -8,6 +8,7 @@ import {
   createTodoMutation,
   deleteTodoMutation,
   listTodosOptions,
+  listTodosQueryKey,
   updateTodoMutation,
 } from "@/api-gen/@tanstack/react-query.gen";
 import type { TodoItem } from "@/api-gen/types.gen";
@@ -134,17 +135,17 @@ export const FlodoBoard: React.FC = () => {
 
   const createMutation = useMutation({
     ...createTodoMutation(),
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["listTodos"] }),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: listTodosQueryKey() }),
   });
 
   const updateMutation = useMutation({
     ...updateTodoMutation(),
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["listTodos"] }),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: listTodosQueryKey() }),
   });
 
   const deleteMutation = useMutation({
     ...deleteTodoMutation(),
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["listTodos"] }),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: listTodosQueryKey() }),
   });
 
   const [draft, setDraft] = useState("");
