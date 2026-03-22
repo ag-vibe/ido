@@ -9,9 +9,11 @@
     "dev": "vp dev --port 3000",
     "build": "vp build",
     "preview": "vp preview",
-    "test": "vp test run"
+    "test": "vp test run",
+    "gen": "openapi-ts"
   },
   "dependencies": {
+    "@hey-api/openapi-ts": "^0.94.4",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-devtools": "latest",
     "@tanstack/react-query": "latest",
@@ -23,9 +25,11 @@
     "@tanstack/router-plugin": "^1.132.0",
     "lucide-react": "^0.545.0",
     "nitro": "npm:nitro-nightly@latest",
+    "ofetch": "^1.5.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "tailwindcss": "^4.1.18"
+    "tailwindcss": "^4.1.18",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.16",
