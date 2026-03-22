@@ -1,0 +1,78 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+/* ---------- flodo theme tokens (notebook-like) ---------- */
+
+:root {
+  /* base colors - warm notebook surface */
+  --bg-base: #f3f1ea;         /* 整个页面的纸张背景 */
+  --surface: #f8f5ee;         /* 中央面板 */
+  --surface-strong: #f8f5ee;
+  --line: rgba(87, 83, 78, 0.36); /* 棕灰色分割线 */
+
+  --sea-ink: #2c261f;         /* 深棕墨色文字 */
+  --sea-ink-soft: #8b8173;    /* 次级文字 */
+  --foam: #fdfaf3;            /* 浅纸色高亮 */
+}
+
+:root.dark,
+:root[data-theme="dark"] {
+  --bg-base: #111827;
+  --surface: #020617;
+  --surface-strong: #020617;
+  --line: rgba(156, 163, 175, 0.4);
+
+  --sea-ink: #e5e7eb;
+  --sea-ink-soft: #9ca3af;
+  --foam: #020617;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg-base: #111827;
+    --surface: #020617;
+    --surface-strong: #020617;
+    --line: rgba(156, 163, 175, 0.4);
+
+    --sea-ink: #e5e7eb;
+    --sea-ink-soft: #9ca3af;
+    --foam: #020617;
+  }
+}
+
+/* ---------- global layout for the single TODO page ---------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg-base);
+  color: var(--sea-ink);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "SN Pro", "SF Pro Text", "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.page-wrap {
+  width: min(1120px, 100% - 1.5rem);
+  margin-inline: auto;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+}
