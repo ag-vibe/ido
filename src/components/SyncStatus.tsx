@@ -7,7 +7,7 @@ type Status = "online" | "offline" | "syncing";
 export default function SyncStatus() {
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<Status>(() =>
-    typeof navigator !== "undefined" && !navigator.onLine ? "offline" : "online"
+    typeof navigator !== "undefined" && !navigator.onLine ? "offline" : "online",
   );
   const [pendingCount, setPendingCount] = useState(0);
 
@@ -46,6 +46,7 @@ export default function SyncStatus() {
 
   return (
     <span
+      data-testid="sync-status"
       className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium leading-none"
       style={{
         background:

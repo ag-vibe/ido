@@ -10,7 +10,10 @@
     "build": "vp build",
     "preview": "vp preview",
     "test": "vp test run",
-    "gen": "openapi-ts"
+    "gen": "openapi-ts",
+    "e2e:cleanup": "node --import tsx ./e2e/scripts/cleanup.ts",
+    "e2e:dry-run": "node --import tsx ./node_modules/@cucumber/cucumber/bin/cucumber-js --config e2e/cucumber.mjs --dry-run",
+    "e2e:test": "node --import tsx ./node_modules/@cucumber/cucumber/bin/cucumber-js --config e2e/cucumber.mjs"
   },
   "dependencies": {
     "@hey-api/openapi-ts": "^0.94.4",
@@ -34,6 +37,8 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@cucumber/cucumber": "^12.7.0",
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/typography": "^0.5.16",
     "@tanstack/devtools-vite": "latest",
     "@testing-library/dom": "^10.4.1",
@@ -43,6 +48,7 @@
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^5.1.4",
     "jsdom": "^28.1.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.7.2",
     "vite": "npm:@voidzero-dev/vite-plus-core@latest",
     "vite-plus": "latest",

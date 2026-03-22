@@ -10,10 +10,16 @@ import { createTodo, updateTodo, deleteTodo } from "@/api-gen/sdk.gen";
 import type { TodoItem } from "@/api-gen/types.gen";
 
 const QUEUE_KEY = "flodo.pending-ops.v1";
+let drainInFlight: Promise<void> | null = null;
 
 export type PendingOp =
   | { id: string; type: "create"; title: string; tempId: string }
-  | { id: string; type: "update"; todoId: string; patch: Partial<Pick<TodoItem, "title" | "bucket" | "done">> }
+  | {
+      id: string;
+      type: "update";
+      todoId: string;
+      patch: Partial<Pick<TodoItem, "title" | "bucket" | "done">>;
+    }
   | { id: string; type: "delete"; todoId: string };
 
 function load(): PendingOp[] {
@@ -66,40 +72,52 @@ export function replaceTempId(tempId: string, realId: string): void {
  * Successful ops are removed; failed ops remain for the next drain attempt.
  */
 export async function drainQueue(queryClient: QueryClient): Promise<void> {
-  const queue = getQueue();
-  if (queue.length === 0) return;
-
-  let hadSuccess = false;
-
-  for (const op of queue) {
-    try {
-      if (op.type === "create") {
-        const res = await createTodo({ body: { title: op.title } });
-        if (res.error) throw new Error("create failed");
-        // Update any subsequent ops that referenced the tempId
-        replaceTempId(op.tempId, (res.data as TodoItem).id);
-        dequeue(op.id);
-        hadSuccess = true;
-      } else if (op.type === "update") {
-        const res = await updateTodo({ path: { id: op.todoId }, body: op.patch });
-        if (res.error) throw new Error("update failed");
-        dequeue(op.id);
-        hadSuccess = true;
-      } else if (op.type === "delete") {
-        const res = await deleteTodo({ path: { id: op.todoId } });
-        if (res.error) throw new Error("delete failed");
-        dequeue(op.id);
-        hadSuccess = true;
-      }
-    } catch {
-      // Leave op in queue for next drain; stop processing to preserve order
-      break;
-    }
+  if (drainInFlight) {
+    return drainInFlight;
   }
 
-  if (hadSuccess) {
-    // Refetch from server so local cache reflects real state
-    await queryClient.invalidateQueries({ queryKey: listTodosQueryKey() });
+  drainInFlight = (async () => {
+    const queue = getQueue();
+    if (queue.length === 0) return;
+
+    let hadSuccess = false;
+
+    for (const op of queue) {
+      try {
+        if (op.type === "create") {
+          const res = await createTodo({ body: { title: op.title } });
+          if (res.error) throw new Error("create failed");
+          // Update any subsequent ops that referenced the tempId
+          replaceTempId(op.tempId, (res.data as TodoItem).id);
+          dequeue(op.id);
+          hadSuccess = true;
+        } else if (op.type === "update") {
+          const res = await updateTodo({ path: { id: op.todoId }, body: op.patch });
+          if (res.error) throw new Error("update failed");
+          dequeue(op.id);
+          hadSuccess = true;
+        } else if (op.type === "delete") {
+          const res = await deleteTodo({ path: { id: op.todoId } });
+          if (res.error) throw new Error("delete failed");
+          dequeue(op.id);
+          hadSuccess = true;
+        }
+      } catch {
+        // Leave op in queue for next drain; stop processing to preserve order
+        break;
+      }
+    }
+
+    if (hadSuccess) {
+      // Refetch from server so local cache reflects real state
+      await queryClient.invalidateQueries({ queryKey: listTodosQueryKey() });
+    }
+  })();
+
+  try {
+    await drainInFlight;
+  } finally {
+    drainInFlight = null;
   }
 }
 

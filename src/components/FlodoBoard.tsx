@@ -1,8 +1,4 @@
-import React, {
-  useCallback,
-  useEffect,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createTodoMutation,
@@ -13,6 +9,7 @@ import {
 } from "@/api-gen/@tanstack/react-query.gen";
 import type { TodoItem } from "@/api-gen/types.gen";
 import { drainQueue, enqueue, opId } from "@/lib/pending-sync";
+import SyncStatus from "./SyncStatus";
 
 // The backend uses "week" (not "thisWeek"), and done is a boolean field.
 // Column mapping: Later = !done && bucket==="later"
@@ -33,10 +30,6 @@ function bucketItems(todos: TodoItem[], bucketId: BucketId): TodoItem[] {
   if (bucketId === "done") return todos.filter((t) => t.done);
   return todos.filter((t) => !t.done && t.bucket === bucketId);
 }
-
-
-
-
 
 interface TodoCardProps {
   todo: TodoItem;
@@ -81,6 +74,7 @@ const TodoCard: React.FC<TodoCardProps> = React.memo(
         draggable={!editing}
         onDragStart={editing ? undefined : onDragStart}
         onDragEnd={editing ? undefined : onDragEnd}
+        data-testid="todo-card"
         className={`${rowBase} ${isDragging ? dragging : ""}`}
       >
         <button
@@ -90,6 +84,7 @@ const TodoCard: React.FC<TodoCardProps> = React.memo(
             onToggleDone();
           }}
           aria-label={todo.done ? "Mark as not done" : "Mark as done"}
+          data-testid="todo-toggle"
           className="flex h-4 w-4 flex-none items-center justify-center rounded-sm border border-[rgba(203,192,173,0.95)] bg-transparent"
         >
           {todo.done && (
@@ -104,10 +99,11 @@ const TodoCard: React.FC<TodoCardProps> = React.memo(
             onChange={(e) => setEditValue(e.target.value)}
             onBlur={commitEdit}
             onKeyDown={handleEditKeyDown}
+            data-testid="todo-title-input"
             className="flex-1 border-none bg-transparent text-xs leading-snug text-(--sea-ink) focus:outline-none focus:ring-0 sm:text-[13px]"
           />
         ) : (
-          <p className={textClass} onDoubleClick={startEdit}>
+          <p data-testid="todo-title" className={textClass} onDoubleClick={startEdit}>
             {todo.title}
           </p>
         )}
@@ -118,13 +114,14 @@ const TodoCard: React.FC<TodoCardProps> = React.memo(
             onDelete();
           }}
           aria-label="Delete task"
+          data-testid="todo-delete"
           className="ml-1 flex-none text-[10px] text-(--sea-ink-soft) opacity-0 transition-opacity group-hover:opacity-100"
         >
           ×
         </button>
       </div>
     );
-  }
+  },
 );
 
 TodoCard.displayName = "TodoCard";
@@ -140,12 +137,12 @@ export const FlodoBoard: React.FC = () => {
   };
   const optimisticUpdate = (id: string, patch: Partial<TodoItem>) => {
     queryClient.setQueryData<TodoItem[]>(listTodosQueryKey(), (prev = []) =>
-      prev.map((t) => (t.id === id ? { ...t, ...patch } : t))
+      prev.map((t) => (t.id === id ? { ...t, ...patch } : t)),
     );
   };
   const optimisticRemove = (id: string) => {
     queryClient.setQueryData<TodoItem[]>(listTodosQueryKey(), (prev = []) =>
-      prev.filter((t) => t.id !== id)
+      prev.filter((t) => t.id !== id),
     );
   };
 
@@ -211,7 +208,7 @@ export const FlodoBoard: React.FC = () => {
   useEffect(() => {
     const now = new Date();
     setTodayLabel(
-      now.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })
+      now.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }),
     );
   }, []);
 
@@ -230,7 +227,13 @@ export const FlodoBoard: React.FC = () => {
       if (!title) return;
       if (!navigator.onLine) {
         const tempId = `temp-${Date.now()}`;
-        const tempItem: TodoItem = { id: tempId, title, bucket: "later", done: false, createdAt: new Date().toISOString() };
+        const tempItem: TodoItem = {
+          id: tempId,
+          title,
+          bucket: "later",
+          done: false,
+          createdAt: new Date().toISOString(),
+        };
         optimisticAdd(tempItem);
         enqueue({ id: opId(), type: "create", title, tempId });
         setDraft("");
@@ -240,7 +243,7 @@ export const FlodoBoard: React.FC = () => {
       setDraft("");
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [draft, createMutation]
+    [draft, createMutation],
   );
 
   const handleDragStart = useCallback((id: string) => {
@@ -263,9 +266,10 @@ export const FlodoBoard: React.FC = () => {
         setDraggingId(null);
         if (!id) return;
 
-        const patch = bucketId === "done"
-          ? { done: true as const }
-          : { bucket: bucketId as TodoItem["bucket"], done: false as const };
+        const patch =
+          bucketId === "done"
+            ? { done: true as const }
+            : { bucket: bucketId as TodoItem["bucket"], done: false as const };
 
         if (!navigator.onLine) {
           optimisticUpdate(id, patch);
@@ -280,7 +284,7 @@ export const FlodoBoard: React.FC = () => {
       };
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [updateMutation]
+    [updateMutation],
   );
 
   const handleDragOver = useCallback((event: React.DragEvent) => {
@@ -305,7 +309,13 @@ export const FlodoBoard: React.FC = () => {
   }
 
   return (
-    <main className="flex min-h-screen w-screen items-stretch bg-(--bg-base)">
+    <main
+      data-testid="todo-board"
+      className="flex min-h-screen w-screen items-stretch bg-(--bg-base)"
+    >
+      <div className="fixed top-4 right-4 z-50">
+        <SyncStatus />
+      </div>
       <section className="flex flex-1 flex-col overflow-hidden bg-(--surface)">
         <div className="grid min-h-screen grid-cols-1 divide-y divide-[rgba(214,204,187,0.9)] sm:grid-cols-2 sm:divide-y-0 sm:divide-x lg:grid-cols-4">
           {BUCKETS.map((bucket) => {
@@ -321,19 +331,16 @@ export const FlodoBoard: React.FC = () => {
                 key={bucket.id}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop(bucket.id)}
+                data-testid={`todo-bucket-${bucket.id}`}
                 className="flex flex-col bg-(--surface)"
               >
                 <header className="flex items-baseline justify-between gap-2 px-5 pt-5 pb-3">
                   <div>
-                    <h2 className="text-[15px] font-medium text-(--sea-ink)">
-                      {bucket.label}
-                    </h2>
+                    <h2 className="text-[15px] font-medium text-(--sea-ink)">{bucket.label}</h2>
                     <p className="text-[11px] text-(--sea-ink-soft)">{countLabel}</p>
                   </div>
                   {bucket.id === "today" && todayLabel && (
-                    <span className="text-[12px] text-(--sea-ink-soft)">
-                      {todayLabel}
-                    </span>
+                    <span className="text-[12px] text-(--sea-ink-soft)">{todayLabel}</span>
                   )}
                 </header>
 
@@ -347,6 +354,7 @@ export const FlodoBoard: React.FC = () => {
                           value={draft}
                           onChange={(e) => setDraft(e.target.value)}
                           placeholder="Add a task"
+                          data-testid="todo-new-input"
                           className="flex-1 border-none bg-transparent text-xs leading-snug text-(--sea-ink) placeholder:text-[rgba(139,129,115,0.9)] focus:outline-none focus:ring-0 sm:text-[13px]"
                         />
                       </div>
