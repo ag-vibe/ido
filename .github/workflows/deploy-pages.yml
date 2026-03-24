@@ -39,9 +39,7 @@ jobs:
         run: pnpm build
         env:
           NODE_ENV: production
-
-      - name: Add SPA 404 fallback
-        run: cp .output/public/index.html .output/public/404.html
+          NITRO_PRESET: github-pages
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
