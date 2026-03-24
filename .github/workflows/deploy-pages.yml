@@ -45,5 +45,3 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy .output/public --project-name=ido --commit-dirty=true
-
-        uses: actions/deploy-pages@v4
