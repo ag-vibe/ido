@@ -1,4 +1,5 @@
 import { FetchError, ofetch } from "ofetch";
+import { getApiBaseUrl } from "@/lib/api-base-url";
 
 const STORAGE_KEY = "flodo.auth.v1";
 const REFRESH_LEEWAY_MS = 60 * 1000;
@@ -15,10 +16,6 @@ export interface AuthSession {
 
 function emitAuthChange(): void {
   listeners.forEach((fn) => fn());
-}
-
-function getApiBaseUrl(): string {
-  return import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
 }
 
 function decodeJwtPayload(token: string): Record<string, unknown> | null {

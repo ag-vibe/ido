@@ -1,6 +1,7 @@
 import type { Client, ResolvedRequestOptions } from "@/api-gen/client";
 import type { CreateClientConfig } from "@/api-gen/client.gen";
 import { clearToken, ensureValidAccessToken } from "@/lib/auth";
+import { getApiBaseUrl } from "@/lib/api-base-url";
 import { ofetch } from "ofetch";
 
 const AUTH_RETRIED_HEADER = "x-flodo-auth-retried";
@@ -56,7 +57,7 @@ export function installAuthInterceptors(...clients: Client[]): void {
 
 export const createClientConfig: CreateClientConfig = (config) => ({
   ...config,
-  baseUrl: import.meta.env.VITE_API_BASE_URL ?? "/api/v1",
+  baseUrl: getApiBaseUrl(),
   auth: async (auth) => {
     if (auth.scheme === "bearer") {
       return (await ensureValidAccessToken()) ?? undefined;
