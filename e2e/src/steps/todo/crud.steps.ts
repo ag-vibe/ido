@@ -44,6 +44,33 @@ When("用户将该任务重命名", async function (this: CustomWorld) {
   console.log(`   ✅ 已重命名为 "${nextTitle}"`);
 });
 
+When("用户通过 Tab 为该任务添加描述", async function (this: CustomWorld) {
+  console.log("   📍 Step: 通过 Tab 打开并填写描述...");
+  const title = this.lastTodoTitle!;
+  const description = `Description ${this.runId}`;
+  this.lastTodoDescription = description;
+
+  await this.todoCard(title).locator(selectors.todoTitle).dblclick();
+  await this.page.locator(selectors.todoTitleInput).press("Tab");
+  await expect(this.page.locator(selectors.todoDescriptionInput)).toBeVisible();
+  await this.page.locator(selectors.todoDescriptionInput).fill(description);
+  await this.page.locator(selectors.todoDescriptionInput).press("Enter");
+
+  console.log(`   ✅ 已填写描述 "${description}"`);
+});
+
+When("用户通过 Tab 打开描述后直接保存", async function (this: CustomWorld) {
+  console.log("   📍 Step: 打开描述输入后直接回车保存...");
+  const title = this.lastTodoTitle!;
+
+  await this.todoCard(title).locator(selectors.todoTitle).dblclick();
+  await this.page.locator(selectors.todoTitleInput).press("Tab");
+  await expect(this.page.locator(selectors.todoDescriptionInput)).toBeVisible();
+  await this.page.locator(selectors.todoDescriptionInput).press("Enter");
+
+  console.log("   ✅ 已保存空描述");
+});
+
 Then("新任务应该出现在 Later 列中", async function (this: CustomWorld) {
   console.log("   📍 Step: 验证任务出现在 Later 列...");
   const title = this.lastTodoTitle!;
@@ -74,4 +101,19 @@ Then("任务标题应该更新", async function (this: CustomWorld) {
   const title = this.lastTodoTitle!;
   await expect(this.page.locator(selectors.todoCard).filter({ hasText: title })).toHaveCount(1);
   console.log(`   ✅ 任务标题已更新为 "${title}"`);
+});
+
+Then("任务描述应该更新", async function (this: CustomWorld) {
+  console.log("   📍 Step: 验证任务描述已更新...");
+  const title = this.lastTodoTitle!;
+  const description = this.lastTodoDescription!;
+  await expect(this.todoCard(title).locator(selectors.todoDescription)).toHaveText(description);
+  console.log(`   ✅ 任务描述已更新为 "${description}"`);
+});
+
+Then("任务不应该显示描述", async function (this: CustomWorld) {
+  console.log("   📍 Step: 验证任务未显示描述...");
+  const title = this.lastTodoTitle!;
+  await expect(this.todoCard(title).locator(selectors.todoDescription)).toHaveCount(0);
+  console.log("   ✅ 任务没有显示描述");
 });

@@ -31,7 +31,8 @@ const config = defineConfig({
       // "null" skips the HTML-transform injection; we add the <link> manually
       // in __root.tsx because TanStack Start renders HTML through React.
       injectRegister: null,
-      devOptions: { enabled: true, type: "module" },
+      // Never enable PWA in dev, otherwise stale SW/cache can break local DX.
+      devOptions: { enabled: false, type: "module" },
       manifest: {
         name: "ido",
         short_name: "ido",
@@ -61,7 +62,7 @@ const config = defineConfig({
         ],
       },
       workbox: {
-        // Only precache built assets in production; dev-dist has no app files
+        // Only precache built assets in production.
         globPatterns: isProd ? ["**/*.{js,css,html,ico,png,svg,woff,woff2}"] : [],
         // SPA fallback: serve index.html for any non-file navigation
         navigateFallback: "/index.html",

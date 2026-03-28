@@ -17,6 +17,7 @@ export class CustomWorld extends World {
   session?: AuthSession;
   user?: E2EUser;
   lastTodoTitle?: string;
+  lastTodoDescription?: string;
 
   constructor(options: IWorldOptions) {
     super(options);

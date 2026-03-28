@@ -16,6 +16,8 @@ interface MyRouterContext {
   queryClient: QueryClient;
 }
 
+const isProd = import.meta.env.PROD;
+
 const THEME_INIT_SCRIPT = `(function(){try{var stored=window.localStorage.getItem('theme');var mode=(stored==='light'||stored==='dark'||stored==='auto')?stored:'auto';var prefersDark=window.matchMedia('(prefers-color-scheme: dark)').matches;var resolved=mode==='auto'?(prefersDark?'dark':'light'):mode;var root=document.documentElement;root.classList.remove('light','dark');root.classList.add(resolved);if(mode==='auto'){root.removeAttribute('data-theme')}else{root.setAttribute('data-theme',mode)}root.style.colorScheme=resolved;}catch(e){}})();`;
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
@@ -37,22 +39,22 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       {
         title: "ido",
       },
-      // PWA meta tags
-      { name: "theme-color", content: "#cbc0ad" },
-      { name: "mobile-web-app-capable", content: "yes" },
-      { name: "apple-mobile-web-app-capable", content: "yes" },
-      { name: "apple-mobile-web-app-status-bar-style", content: "default" },
-      { name: "apple-mobile-web-app-title", content: "ido" },
+      ...(isProd
+        ? [
+            { name: "theme-color", content: "#cbc0ad" },
+            { name: "mobile-web-app-capable", content: "yes" },
+            { name: "apple-mobile-web-app-capable", content: "yes" },
+            { name: "apple-mobile-web-app-status-bar-style", content: "default" },
+            { name: "apple-mobile-web-app-title", content: "ido" },
+          ]
+        : []),
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
       },
-      // Manually inject the PWA manifest — TanStack Start renders the HTML
-      // shell via React so Vite's HTML transform (injectRegister:"auto") never runs.
-      { rel: "manifest", href: "/manifest.webmanifest" },
-      { rel: "apple-touch-icon", href: "/logo192.png" },
+      ...(isProd ? [{ rel: "manifest", href: "/manifest.webmanifest" }, { rel: "apple-touch-icon", href: "/logo192.png" }] : []),
     ],
   }),
   shellComponent: RootDocument,
@@ -68,6 +70,26 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       }
     });
   }, [router]);
+
+  useEffect(() => {
+    if (!import.meta.env.DEV || typeof window === "undefined") return;
+
+    void (async () => {
+      try {
+        if ("serviceWorker" in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          await Promise.allSettled(registrations.map((registration) => registration.unregister()));
+        }
+
+        if ("caches" in window) {
+          const keys = await caches.keys();
+          await Promise.allSettled(keys.map((key) => caches.delete(key)));
+        }
+      } catch (error) {
+        console.warn("Failed to cleanup service worker/cache in dev", error);
+      }
+    })();
+  }, []);
 
   return (
     <html lang="en" suppressHydrationWarning>

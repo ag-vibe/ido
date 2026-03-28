@@ -5,6 +5,8 @@ import { useRegisterSW } from "virtual:pwa-register/react";
  * version of the app is available. The user can reload to apply it.
  */
 export default function UpdatePrompt() {
+  if (!import.meta.env.PROD) return null;
+
   const {
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
