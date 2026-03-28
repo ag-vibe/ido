@@ -29,3 +29,15 @@ Feature: Todo 基础操作
     Given 用户已创建一个任务
     When 用户将该任务重命名
     Then 任务标题应该更新
+
+  @TODO-CRUD-005 @P1 @regression
+  Scenario: 用户通过 Tab 为任务添加描述
+    Given 用户已创建一个任务
+    When 用户通过 Tab 为该任务添加描述
+    Then 任务描述应该更新
+
+  @TODO-CRUD-006 @P1 @regression
+  Scenario: 用户打开描述输入后直接保存空描述
+    Given 用户已创建一个任务
+    When 用户通过 Tab 打开描述后直接保存
+    Then 任务不应该显示描述

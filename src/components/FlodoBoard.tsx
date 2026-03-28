@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createTodoMutation,
@@ -9,6 +9,12 @@ import {
 } from "@/api-gen/@tanstack/react-query.gen";
 import type { TodoItem } from "@/api-gen/types.gen";
 import { drainQueue, enqueue, opId } from "@/lib/pending-sync";
+import {
+  normalizeDescription,
+  toUpdateTodoRequest,
+  type TodoPatch,
+  type TodoWithDescription,
+} from "@/lib/todo-patch";
 import SyncStatus from "./SyncStatus";
 
 // The backend uses "week" (not "thisWeek"), and done is a boolean field.
@@ -26,47 +32,109 @@ const BUCKETS: { id: BucketId; label: string }[] = [
   { id: "done", label: "Done" },
 ];
 
-function bucketItems(todos: TodoItem[], bucketId: BucketId): TodoItem[] {
+function bucketItems(todos: TodoWithDescription[], bucketId: BucketId): TodoWithDescription[] {
   if (bucketId === "done") return todos.filter((t) => t.done);
   return todos.filter((t) => !t.done && t.bucket === bucketId);
 }
 
 interface TodoCardProps {
-  todo: TodoItem;
+  todo: TodoWithDescription;
   isDragging: boolean;
   onDragStart: (event: React.DragEvent<HTMLDivElement>) => void;
   onDragEnd: () => void;
   onToggleDone: () => void;
   onDelete: () => void;
-  onRename: (title: string) => void;
+  onSave: (patch: TodoPatch) => void;
 }
 
 const TodoCard: React.FC<TodoCardProps> = React.memo(
-  ({ todo, isDragging, onDragStart, onDragEnd, onToggleDone, onDelete, onRename }) => {
+  ({ todo, isDragging, onDragStart, onDragEnd, onToggleDone, onDelete, onSave }) => {
     const [editing, setEditing] = useState(false);
     const [editValue, setEditValue] = useState("");
+    const [editDescription, setEditDescription] = useState("");
+    const [showDescriptionInput, setShowDescriptionInput] = useState(false);
+    const editorRef = useRef<HTMLDivElement>(null);
+    const descriptionInputRef = useRef<HTMLInputElement>(null);
 
     const rowBase =
-      "group flex items-center gap-3 py-2 border-b border-dashed border-[var(--row-border)] cursor-pointer select-none";
+      "group flex items-start gap-3 py-2 border-b border-dashed border-[var(--row-border)] cursor-pointer select-none";
     const dragging = "bg-[var(--drag-bg)] opacity-80";
 
     const textClass = todo.done
-      ? "flex-1 break-words text-xs leading-snug text-(--sea-ink-soft) line-through decoration-[var(--strike-color)] sm:text-[13px]"
-      : "flex-1 break-words text-xs leading-snug text-(--sea-ink) sm:text-[13px]";
+      ? "break-words text-xs leading-snug text-(--sea-ink-soft) line-through decoration-[var(--strike-color)] sm:text-[13px]"
+      : "break-words text-xs leading-snug text-(--sea-ink) sm:text-[13px]";
+    const descriptionTextClass = todo.done
+      ? "break-words text-[11px] leading-snug text-(--sea-ink-soft) opacity-75 line-through decoration-[var(--strike-color)]"
+      : "break-words text-[11px] leading-snug text-(--sea-ink-soft)";
 
     const startEdit = () => {
+      const currentDescription = normalizeDescription(todo.description);
       setEditValue(todo.title);
+      setEditDescription(currentDescription);
+      setShowDescriptionInput(Boolean(currentDescription));
       setEditing(true);
     };
 
     const commitEdit = () => {
-      if (editValue.trim()) onRename(editValue.trim());
+      const patch: TodoPatch = {};
+      const nextTitle = editValue.trim();
+      const currentDescription = normalizeDescription(todo.description);
+      const nextDescription = editDescription.trim();
+
+      if (nextTitle && nextTitle !== todo.title) {
+        patch.title = nextTitle;
+      }
+      if (nextDescription !== currentDescription) {
+        patch.description = nextDescription;
+      }
+
+      if (Object.keys(patch).length > 0) {
+        onSave(patch);
+      }
       setEditing(false);
+      setShowDescriptionInput(false);
     };
 
-    const handleEditKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Enter") commitEdit();
-      if (e.key === "Escape") setEditing(false);
+    const cancelEdit = () => {
+      setEditing(false);
+      setShowDescriptionInput(false);
+    };
+
+    const handleEditorBlur = (event: React.FocusEvent<HTMLInputElement>) => {
+      const nextFocused = event.relatedTarget as Node | null;
+      if (nextFocused && editorRef.current?.contains(nextFocused)) {
+        return;
+      }
+      commitEdit();
+    };
+
+    const handleTitleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        commitEdit();
+      }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        cancelEdit();
+      }
+      if (event.key === "Tab" && !showDescriptionInput) {
+        event.preventDefault();
+        setShowDescriptionInput(true);
+        requestAnimationFrame(() => {
+          descriptionInputRef.current?.focus();
+        });
+      }
+    };
+
+    const handleDescriptionKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        commitEdit();
+      }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        cancelEdit();
+      }
     };
 
     return (
@@ -91,22 +159,46 @@ const TodoCard: React.FC<TodoCardProps> = React.memo(
             <span className="block h-2.5 w-2.5 rounded-[3px] bg-(--checkbox-fill)" />
           )}
         </button>
-        {editing ? (
-          <input
-            autoFocus
-            type="text"
-            value={editValue}
-            onChange={(e) => setEditValue(e.target.value)}
-            onBlur={commitEdit}
-            onKeyDown={handleEditKeyDown}
-            data-testid="todo-title-input"
-            className="flex-1 border-none bg-transparent text-xs leading-snug text-(--sea-ink) focus:outline-none focus:ring-0 sm:text-[13px]"
-          />
-        ) : (
-          <p data-testid="todo-title" className={textClass} onDoubleClick={startEdit}>
-            {todo.title}
-          </p>
-        )}
+        <div className="min-w-0 flex-1">
+          {editing ? (
+            <div ref={editorRef} className="flex flex-col gap-1">
+              <input
+                autoFocus
+                type="text"
+                value={editValue}
+                onChange={(event) => setEditValue(event.target.value)}
+                onBlur={handleEditorBlur}
+                onKeyDown={handleTitleKeyDown}
+                data-testid="todo-title-input"
+                className="border-none bg-transparent text-xs leading-snug text-(--sea-ink) focus:outline-none focus:ring-0 sm:text-[13px]"
+              />
+              {showDescriptionInput && (
+                <input
+                  ref={descriptionInputRef}
+                  type="text"
+                  value={editDescription}
+                  placeholder="Description"
+                  onChange={(event) => setEditDescription(event.target.value)}
+                  onBlur={handleEditorBlur}
+                  onKeyDown={handleDescriptionKeyDown}
+                  data-testid="todo-description-input"
+                  className="border-none bg-transparent text-[11px] leading-snug text-(--sea-ink-soft) placeholder:text-(--placeholder-text) focus:outline-none focus:ring-0"
+                />
+              )}
+            </div>
+          ) : (
+            <div onDoubleClick={startEdit}>
+              <p data-testid="todo-title" className={textClass}>
+                {todo.title}
+              </p>
+              {normalizeDescription(todo.description) && (
+                <p data-testid="todo-description" className={descriptionTextClass}>
+                  {normalizeDescription(todo.description)}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
         <button
           type="button"
           onClick={(event) => {
@@ -129,19 +221,23 @@ TodoCard.displayName = "TodoCard";
 export const FlodoBoard: React.FC = () => {
   const queryClient = useQueryClient();
 
-  const { data: todos = [], isLoading, isError } = useQuery(listTodosOptions());
+  const { data: serverTodos = [], isLoading, isError } = useQuery(listTodosOptions());
+  const todos = serverTodos as TodoWithDescription[];
 
   // --- Optimistic update helpers ---
-  const optimisticAdd = (item: TodoItem) => {
-    queryClient.setQueryData<TodoItem[]>(listTodosQueryKey(), (prev = []) => [item, ...prev]);
+  const optimisticAdd = (item: TodoWithDescription) => {
+    queryClient.setQueryData<TodoWithDescription[]>(listTodosQueryKey(), (prev = []) => [
+      item,
+      ...prev,
+    ]);
   };
-  const optimisticUpdate = (id: string, patch: Partial<TodoItem>) => {
-    queryClient.setQueryData<TodoItem[]>(listTodosQueryKey(), (prev = []) =>
+  const optimisticUpdate = (id: string, patch: TodoPatch) => {
+    queryClient.setQueryData<TodoWithDescription[]>(listTodosQueryKey(), (prev = []) =>
       prev.map((t) => (t.id === id ? { ...t, ...patch } : t)),
     );
   };
   const optimisticRemove = (id: string) => {
-    queryClient.setQueryData<TodoItem[]>(listTodosQueryKey(), (prev = []) =>
+    queryClient.setQueryData<TodoWithDescription[]>(listTodosQueryKey(), (prev = []) =>
       prev.filter((t) => t.id !== id),
     );
   };
@@ -150,8 +246,8 @@ export const FlodoBoard: React.FC = () => {
     ...createTodoMutation(),
     onMutate: async ({ body }) => {
       await queryClient.cancelQueries({ queryKey: listTodosQueryKey() });
-      const snapshot = queryClient.getQueryData<TodoItem[]>(listTodosQueryKey());
-      const tempItem: TodoItem = {
+      const snapshot = queryClient.getQueryData<TodoWithDescription[]>(listTodosQueryKey());
+      const tempItem: TodoWithDescription = {
         id: `temp-${Date.now()}`,
         title: body.title,
         bucket: "later",
@@ -173,8 +269,8 @@ export const FlodoBoard: React.FC = () => {
     ...updateTodoMutation(),
     onMutate: async ({ path, body }) => {
       await queryClient.cancelQueries({ queryKey: listTodosQueryKey() });
-      const snapshot = queryClient.getQueryData<TodoItem[]>(listTodosQueryKey());
-      optimisticUpdate(path.id, body);
+      const snapshot = queryClient.getQueryData<TodoWithDescription[]>(listTodosQueryKey());
+      optimisticUpdate(path.id, body as TodoPatch);
       return { snapshot };
     },
     onError: (_err, _vars, ctx) => {
@@ -189,7 +285,7 @@ export const FlodoBoard: React.FC = () => {
     ...deleteTodoMutation(),
     onMutate: async ({ path }) => {
       await queryClient.cancelQueries({ queryKey: listTodosQueryKey() });
-      const snapshot = queryClient.getQueryData<TodoItem[]>(listTodosQueryKey());
+      const snapshot = queryClient.getQueryData<TodoWithDescription[]>(listTodosQueryKey());
       optimisticRemove(path.id);
       return { snapshot };
     },
@@ -227,7 +323,7 @@ export const FlodoBoard: React.FC = () => {
       if (!title) return;
       if (!navigator.onLine) {
         const tempId = `temp-${Date.now()}`;
-        const tempItem: TodoItem = {
+        const tempItem: TodoWithDescription = {
           id: tempId,
           title,
           bucket: "later",
@@ -277,9 +373,12 @@ export const FlodoBoard: React.FC = () => {
           return;
         }
         if (bucketId === "done") {
-          updateMutation.mutate({ body: { done: true }, path: { id } });
+          updateMutation.mutate({ body: toUpdateTodoRequest({ done: true }), path: { id } });
         } else {
-          updateMutation.mutate({ body: { bucket: bucketId, done: false }, path: { id } });
+          updateMutation.mutate({
+            body: toUpdateTodoRequest({ bucket: bucketId, done: false }),
+            path: { id },
+          });
         }
       };
     },
@@ -375,13 +474,16 @@ export const FlodoBoard: React.FC = () => {
                           onDragStart={handleDragStart(todo.id)}
                           onDragEnd={handleDragEnd}
                           onToggleDone={() => {
-                            const patch = { done: !todo.done };
+                            const patch: TodoPatch = { done: !todo.done };
                             if (!navigator.onLine) {
                               optimisticUpdate(todo.id, patch);
                               enqueue({ id: opId(), type: "update", todoId: todo.id, patch });
                               return;
                             }
-                            updateMutation.mutate({ body: patch, path: { id: todo.id } });
+                            updateMutation.mutate({
+                              body: toUpdateTodoRequest(patch),
+                              path: { id: todo.id },
+                            });
                           }}
                           onDelete={() => {
                             if (!navigator.onLine) {
@@ -391,14 +493,16 @@ export const FlodoBoard: React.FC = () => {
                             }
                             deleteMutation.mutate({ path: { id: todo.id } });
                           }}
-                          onRename={(title) => {
-                            const patch = { title };
+                          onSave={(patch) => {
                             if (!navigator.onLine) {
                               optimisticUpdate(todo.id, patch);
                               enqueue({ id: opId(), type: "update", todoId: todo.id, patch });
                               return;
                             }
-                            updateMutation.mutate({ body: patch, path: { id: todo.id } });
+                            updateMutation.mutate({
+                              body: toUpdateTodoRequest(patch),
+                              path: { id: todo.id },
+                            });
                           }}
                         />
                       ))}

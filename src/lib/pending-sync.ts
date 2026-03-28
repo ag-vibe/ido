@@ -8,6 +8,8 @@ import type { QueryClient } from "@tanstack/react-query";
 import { listTodosQueryKey } from "@/api-gen/@tanstack/react-query.gen";
 import { createTodo, updateTodo, deleteTodo } from "@/api-gen/sdk.gen";
 import type { TodoItem } from "@/api-gen/types.gen";
+import { toUpdateTodoRequest } from "@/lib/todo-patch";
+import type { TodoPatch } from "@/lib/todo-patch";
 
 const QUEUE_KEY = "flodo.pending-ops.v1";
 let drainInFlight: Promise<void> | null = null;
@@ -18,7 +20,7 @@ export type PendingOp =
       id: string;
       type: "update";
       todoId: string;
-      patch: Partial<Pick<TodoItem, "title" | "bucket" | "done">>;
+      patch: TodoPatch;
     }
   | { id: string; type: "delete"; todoId: string };
 
@@ -92,7 +94,10 @@ export async function drainQueue(queryClient: QueryClient): Promise<void> {
           dequeue(op.id);
           hadSuccess = true;
         } else if (op.type === "update") {
-          const res = await updateTodo({ path: { id: op.todoId }, body: op.patch });
+          const res = await updateTodo({
+            path: { id: op.todoId },
+            body: toUpdateTodoRequest(op.patch),
+          });
           if (res.error) throw new Error("update failed");
           dequeue(op.id);
           hadSuccess = true;
