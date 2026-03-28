@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createTodoMutation,
@@ -9,6 +9,11 @@ import {
 } from "@/api-gen/@tanstack/react-query.gen";
 import type { TodoItem } from "@/api-gen/types.gen";
 import { drainQueue, enqueue, opId } from "@/lib/pending-sync";
+import {
+  applyStoredDescriptions,
+  clearTodoDescription,
+  persistTodoDescription,
+} from "@/lib/todo-descriptions";
 import {
   normalizeDescription,
   toUpdateTodoRequest,
@@ -222,7 +227,10 @@ export const FlodoBoard: React.FC = () => {
   const queryClient = useQueryClient();
 
   const { data: serverTodos = [], isLoading, isError } = useQuery(listTodosOptions());
-  const todos = serverTodos as TodoWithDescription[];
+  const todos = useMemo(
+    () => applyStoredDescriptions(serverTodos as TodoWithDescription[]),
+    [serverTodos],
+  );
 
   // --- Optimistic update helpers ---
   const optimisticAdd = (item: TodoWithDescription) => {
@@ -232,11 +240,15 @@ export const FlodoBoard: React.FC = () => {
     ]);
   };
   const optimisticUpdate = (id: string, patch: TodoPatch) => {
+    if ("description" in patch) {
+      persistTodoDescription(id, patch.description ?? "");
+    }
     queryClient.setQueryData<TodoWithDescription[]>(listTodosQueryKey(), (prev = []) =>
       prev.map((t) => (t.id === id ? { ...t, ...patch } : t)),
     );
   };
   const optimisticRemove = (id: string) => {
+    clearTodoDescription(id);
     queryClient.setQueryData<TodoWithDescription[]>(listTodosQueryKey(), (prev = []) =>
       prev.filter((t) => t.id !== id),
     );
