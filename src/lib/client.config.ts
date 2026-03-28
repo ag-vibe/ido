@@ -1,6 +1,6 @@
 import type { Client, ResolvedRequestOptions } from "@/api-gen/client";
 import type { CreateClientConfig } from "@/api-gen/client.gen";
-import { clearToken, ensureValidAccessToken } from "@/lib/auth";
+import { ensureValidAccessToken } from "@/lib/auth";
 import { getApiBaseUrl } from "@/lib/api-base-url";
 import { ofetch } from "ofetch";
 
@@ -22,9 +22,8 @@ async function refreshAndRetry(
 
   const token = await ensureValidAccessToken(true);
   if (!token) {
-    // 换不到新 token（无 refreshToken 或 refreshToken 已过期）
-    // → session 彻底失效，清掉让 subscribeAuth 跳登录
-    clearToken();
+    // Don't force logout on transient refresh failures (network/5xx). auth.ts
+    // already clears session on definitive auth failures (e.g. refresh 401/4xx).
     return response;
   }
 

@@ -224,3 +224,333 @@ a {
 button {
   font: inherit;
 }
+/* ---------- settings drawer ---------- */
+
+/* Trigger capsule wrap */
+.sd-trigger-wrap {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  z-index: 100;
+  pointer-events: none;
+}
+
+/* Capsule pill */
+.sd-capsule {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 5px 8px;
+  border-radius: 9999px;
+  border: 1px solid var(--chip-line);
+  background: var(--chip-bg);
+  box-shadow: 0 4px 16px rgba(44,38,31,0.10), 0 1px 4px rgba(44,38,31,0.06);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  pointer-events: auto;
+}
+
+.sd-capsule-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--sea-ink-soft);
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+  flex-shrink: 0;
+}
+
+.sd-capsule-btn:hover {
+  background: var(--link-bg-hover);
+  color: var(--sea-ink);
+}
+
+.sd-capsule-btn:active {
+  opacity: 0.55;
+}
+
+.sd-capsule-dot {
+  display: block;
+  width: 3px;
+  height: 3px;
+  border-radius: 9999px;
+  background: currentColor;
+}
+
+.sd-capsule-divider {
+  width: 1px;
+  height: 16px;
+  background: var(--chip-line);
+  margin: 0 2px;
+  flex-shrink: 0;
+}
+
+/* Overlay */
+.sd-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(44, 38, 31, 0.18);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  z-index: 200;
+}
+
+/* Drawer panel — centered via margin-inline:auto, no translateX so vaul's
+   slide animation (translateY) works correctly without axis conflict */
+.sd-content {
+  position: fixed;
+  bottom: 1rem;
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+  z-index: 201;
+  width: min(400px, calc(100vw - 2rem));
+  background: var(--surface);
+  border: 1px solid var(--chip-line);
+  border-radius: 20px;
+  box-shadow:
+    0 24px 64px rgba(44,38,31,0.16),
+    0 4px 16px rgba(44,38,31,0.08),
+    inset 0 1px 0 rgba(255,252,248,0.06);
+  outline: none;
+  overflow: hidden;
+  max-height: calc(100dvh - 3rem);
+  display: flex;
+  flex-direction: column;
+}
+
+.sd-handle-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 10px 0 4px;
+  flex-shrink: 0;
+}
+
+.sd-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 9999px;
+  background: var(--chip-line);
+}
+
+.sd-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--sea-ink);
+  padding: 4px 20px 10px;
+  margin: 0;
+}
+
+/* Sections */
+.sd-inner {
+  padding: 0 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Each group is a subtle inset block */
+.sd-group {
+  background: var(--bg-base);
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.sd-group-divider {
+  height: 1px;
+  background: var(--row-border);
+  opacity: 0.5;
+  margin: 0 12px;
+}
+
+/* Rows */
+.sd-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 13.5px;
+  color: var(--sea-ink);
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.1s ease;
+  gap: 10px;
+  box-sizing: border-box;
+}
+
+.sd-row:hover {
+  background: var(--link-bg-hover);
+}
+
+.sd-row--spread {
+  cursor: default;
+  justify-content: space-between;
+}
+
+.sd-row--spread:hover {
+  background: transparent;
+}
+
+.sd-row--static {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.sd-row--static:hover {
+  background: transparent;
+}
+
+.sd-row--danger {
+  color: var(--error-text);
+}
+
+.sd-row--input {
+  cursor: default;
+  gap: 6px;
+  padding: 7px 10px;
+}
+
+.sd-row--input:hover {
+  background: transparent;
+}
+
+.sd-input {
+  flex: 1;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 12.5px;
+  color: var(--sea-ink);
+  outline: none;
+  min-width: 0;
+}
+
+.sd-input:focus {
+  border-color: var(--input-border-focus);
+  box-shadow: 0 0 0 2px var(--input-ring-focus);
+}
+
+.sd-input-btn {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--sea-ink);
+  background: var(--btn-tint);
+  border: none;
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.1s ease;
+}
+
+.sd-input-btn:hover {
+  background: var(--btn-tint-hover);
+}
+
+.sd-input-btn--muted {
+  color: var(--sea-ink-soft);
+  background: transparent;
+}
+
+.sd-input-btn--muted:hover {
+  background: var(--link-bg-hover);
+}
+
+.sd-row-label {
+  flex: 1;
+}
+
+.sd-row-label--muted {
+  color: var(--sea-ink-soft);
+  font-size: 12px;
+}
+
+.sd-row-hint {
+  font-size: 12px;
+  color: var(--sea-ink-soft);
+  opacity: 0.6;
+}
+
+.sd-about {
+  font-size: 11.5px;
+  color: var(--sea-ink-soft);
+  opacity: 0.4;
+  text-align: center;
+  margin: 0;
+  padding: 2px 0;
+}
+
+.sd-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.sd-badge--ok {
+  background: rgba(44, 164, 100, 0.14);
+  color: rgba(22, 110, 60, 0.9);
+}
+
+.sd-badge--err {
+  background: var(--error-bg);
+  color: var(--error-text);
+}
+
+.sd-badge--custom {
+  background: rgba(109, 93, 72, 0.12);
+  color: var(--sea-ink-soft);
+}
+
+.sd-shortcuts {
+  padding: 4px 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sd-shortcut-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sd-shortcut-desc {
+  font-size: 12px;
+  color: var(--sea-ink-soft);
+}
+
+.sd-shortcut-keys {
+  display: flex;
+  gap: 3px;
+}
+
+.sd-kbd {
+  font-family: inherit;
+  font-size: 11px;
+  color: var(--sea-ink-soft);
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-line);
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
+.sd-bottom-pad {
+  height: 8px;
+}

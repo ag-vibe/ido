@@ -6,6 +6,7 @@ import { installAuthInterceptors } from "../lib/client.config";
 import { client as todoClient } from "../api-gen/client.gen";
 import { client as anclaxClient } from "../api-anclax/client.gen";
 import UpdatePrompt from "../components/UpdatePrompt";
+import SettingsDrawer from "../components/SettingsDrawer";
 import { useEffect } from "react";
 
 installAuthInterceptors(todoClient, anclaxClient);
@@ -98,7 +99,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body className="font-sans antialiased wrap-anywhere">
-        <TanStackQueryProvider>{children}</TanStackQueryProvider>
+        <TanStackQueryProvider>
+          {children}
+          <SettingsDrawer />
+        </TanStackQueryProvider>
         <UpdatePrompt />
         <Scripts />
       </body>
