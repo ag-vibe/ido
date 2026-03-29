@@ -2,8 +2,22 @@
 
 import * as z from 'zod';
 
+export const zAttachment = z.object({
+    contentType: z.string(),
+    createdAt: z.iso.datetime(),
+    downloadUrl: z.string(),
+    filename: z.string(),
+    id: z.uuid(),
+    sizeBytes: z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' })
+});
+
 export const zCreateTodoRequest = z.object({
     title: z.string()
+});
+
+export const zLinkAttachmentRequest = z.object({
+    resourceId: z.uuid(),
+    resourceType: z.string()
 });
 
 export const zTodoItem = z.object({
@@ -13,6 +27,7 @@ export const zTodoItem = z.object({
         'today'
     ]),
     createdAt: z.iso.datetime(),
+    description: z.string(),
     done: z.boolean(),
     id: z.uuid(),
     title: z.string()
@@ -24,8 +39,66 @@ export const zUpdateTodoRequest = z.object({
         'week',
         'today'
     ]).optional(),
+    description: z.string().optional(),
     done: z.boolean().optional(),
     title: z.string().optional()
+});
+
+export const zUploadAttachmentData = z.object({
+    body: z.object({
+        file: z.string()
+    }),
+    path: z.never().optional(),
+    query: z.never().optional()
+});
+
+export const zDeleteAttachmentData = z.object({
+    body: z.never().optional(),
+    path: z.object({
+        id: z.uuid()
+    }),
+    query: z.never().optional()
+});
+
+export const zGetAttachmentData = z.object({
+    body: z.never().optional(),
+    path: z.object({
+        id: z.uuid()
+    }),
+    query: z.never().optional()
+});
+
+export const zDownloadAttachmentData = z.object({
+    body: z.never().optional(),
+    path: z.object({
+        id: z.uuid()
+    }),
+    query: z.never().optional()
+});
+
+export const zUnlinkAttachmentData = z.object({
+    body: zLinkAttachmentRequest,
+    path: z.object({
+        id: z.uuid()
+    }),
+    query: z.never().optional()
+});
+
+export const zLinkAttachmentData = z.object({
+    body: zLinkAttachmentRequest,
+    path: z.object({
+        id: z.uuid()
+    }),
+    query: z.never().optional()
+});
+
+export const zListAttachmentsByResourceData = z.object({
+    body: z.never().optional(),
+    path: z.object({
+        resourceType: z.string(),
+        resourceId: z.uuid()
+    }),
+    query: z.never().optional()
 });
 
 export const zListTodosData = z.object({

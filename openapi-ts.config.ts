@@ -14,15 +14,6 @@ export default defineConfig({
     clean: true,
     preferExportAll: true,
   }],
-  parser: {
-    filters: {
-      operations: {
-        include: ["/^[A-Z]+ \/todos(\\/|$)/"],
-      },
-      orphans: false,
-      preserveOrder: true,
-    },
-  },
   plugins: [
     {
       name: "@hey-api/client-ofetch",

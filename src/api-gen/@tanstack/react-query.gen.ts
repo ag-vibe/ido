@@ -3,8 +3,42 @@
 import { type DefaultError, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { createTodo, deleteTodo, listTodos, type Options, updateTodo } from '../sdk.gen';
-import type { CreateTodoData, CreateTodoResponse, DeleteTodoData, DeleteTodoResponse, ListTodosData, ListTodosResponse, UpdateTodoData, UpdateTodoResponse } from '../types.gen';
+import { createTodo, deleteAttachment, deleteTodo, downloadAttachment, getAttachment, linkAttachment, listAttachmentsByResource, listTodos, type Options, unlinkAttachment, updateTodo, uploadAttachment } from '../sdk.gen';
+import type { CreateTodoData, CreateTodoResponse, DeleteAttachmentData, DeleteAttachmentResponse, DeleteTodoData, DeleteTodoResponse, DownloadAttachmentData, DownloadAttachmentResponse, GetAttachmentData, GetAttachmentResponse, LinkAttachmentData, LinkAttachmentResponse, ListAttachmentsByResourceData, ListAttachmentsByResourceResponse, ListTodosData, ListTodosResponse, UnlinkAttachmentData, UnlinkAttachmentResponse, UpdateTodoData, UpdateTodoResponse, UploadAttachmentData, UploadAttachmentResponse } from '../types.gen';
+
+/**
+ * Upload attachment
+ */
+export const uploadAttachmentMutation = (options?: Partial<Options<UploadAttachmentData>>): UseMutationOptions<UploadAttachmentResponse, DefaultError, Options<UploadAttachmentData>> => {
+    const mutationOptions: UseMutationOptions<UploadAttachmentResponse, DefaultError, Options<UploadAttachmentData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await uploadAttachment({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Delete attachment
+ */
+export const deleteAttachmentMutation = (options?: Partial<Options<DeleteAttachmentData>>): UseMutationOptions<DeleteAttachmentResponse, DefaultError, Options<DeleteAttachmentData>> => {
+    const mutationOptions: UseMutationOptions<DeleteAttachmentResponse, DefaultError, Options<DeleteAttachmentData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await deleteAttachment({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -38,6 +72,94 @@ const createQueryKey = <TOptions extends Options>(id: string, options?: TOptions
     }
     return [params];
 };
+
+export const getAttachmentQueryKey = (options: Options<GetAttachmentData>) => createQueryKey('getAttachment', options);
+
+/**
+ * Get attachment metadata
+ */
+export const getAttachmentOptions = (options: Options<GetAttachmentData>) => queryOptions<GetAttachmentResponse, DefaultError, GetAttachmentResponse, ReturnType<typeof getAttachmentQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getAttachment({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getAttachmentQueryKey(options)
+});
+
+export const downloadAttachmentQueryKey = (options: Options<DownloadAttachmentData>) => createQueryKey('downloadAttachment', options);
+
+/**
+ * Download attachment content
+ */
+export const downloadAttachmentOptions = (options: Options<DownloadAttachmentData>) => queryOptions<DownloadAttachmentResponse, DefaultError, DownloadAttachmentResponse, ReturnType<typeof downloadAttachmentQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await downloadAttachment({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: downloadAttachmentQueryKey(options)
+});
+
+/**
+ * Unlink attachment from a resource
+ */
+export const unlinkAttachmentMutation = (options?: Partial<Options<UnlinkAttachmentData>>): UseMutationOptions<UnlinkAttachmentResponse, DefaultError, Options<UnlinkAttachmentData>> => {
+    const mutationOptions: UseMutationOptions<UnlinkAttachmentResponse, DefaultError, Options<UnlinkAttachmentData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await unlinkAttachment({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Link attachment to a resource
+ */
+export const linkAttachmentMutation = (options?: Partial<Options<LinkAttachmentData>>): UseMutationOptions<LinkAttachmentResponse, DefaultError, Options<LinkAttachmentData>> => {
+    const mutationOptions: UseMutationOptions<LinkAttachmentResponse, DefaultError, Options<LinkAttachmentData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await linkAttachment({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const listAttachmentsByResourceQueryKey = (options: Options<ListAttachmentsByResourceData>) => createQueryKey('listAttachmentsByResource', options);
+
+/**
+ * List attachments by resource
+ */
+export const listAttachmentsByResourceOptions = (options: Options<ListAttachmentsByResourceData>) => queryOptions<ListAttachmentsByResourceResponse, DefaultError, ListAttachmentsByResourceResponse, ReturnType<typeof listAttachmentsByResourceQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listAttachmentsByResource({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listAttachmentsByResourceQueryKey(options)
+});
 
 export const listTodosQueryKey = (options?: Options<ListTodosData>) => createQueryKey('listTodos', options);
 
