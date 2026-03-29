@@ -22,8 +22,9 @@ Given("用户已创建一个任务", async function (this: CustomWorld) {
   const title = `E2E Task ${this.runId}`;
   this.lastTodoTitle = title;
 
-  await this.page.locator(selectors.newInput).fill(title);
-  await this.page.locator(selectors.newInput).press("Enter");
+  await this.openNewTaskInput("later");
+  await this.bucket("later").locator(selectors.newInput).fill(title);
+  await this.bucket("later").locator(selectors.newInput).press("Enter");
   await this.page.locator(selectors.todoCard).filter({ hasText: title }).first().waitFor();
 
   console.log(`   ✅ 已创建任务 "${title}"`);

@@ -7,6 +7,7 @@ import {
   listTodosQueryKey,
   updateTodoMutation,
 } from "@/api-gen/@tanstack/react-query.gen";
+import { updateTodo } from "@/api-gen/sdk.gen";
 import type { TodoItem } from "@/api-gen/types.gen";
 import { drainQueue, enqueue, opId } from "@/lib/pending-sync";
 import {
@@ -29,6 +30,7 @@ import SyncStatus from "./SyncStatus";
 //                 Done = done===true
 
 type BucketId = "later" | "week" | "today" | "done";
+type CreatableBucketId = Exclude<BucketId, "done">;
 
 const BUCKETS: { id: BucketId; label: string }[] = [
   { id: "later", label: "Later" },
@@ -192,7 +194,12 @@ const TodoCard: React.FC<TodoCardProps> = React.memo(
               )}
             </div>
           ) : (
-            <div onDoubleClick={startEdit}>
+            <div
+              onDoubleClick={(event) => {
+                event.stopPropagation();
+                startEdit();
+              }}
+            >
               <p data-testid="todo-title" className={textClass}>
                 {todo.title}
               </p>
@@ -256,25 +263,6 @@ export const FlodoBoard: React.FC = () => {
 
   const createMutation = useMutation({
     ...createTodoMutation(),
-    onMutate: async ({ body }) => {
-      await queryClient.cancelQueries({ queryKey: listTodosQueryKey() });
-      const snapshot = queryClient.getQueryData<TodoWithDescription[]>(listTodosQueryKey());
-      const tempItem: TodoWithDescription = {
-        id: `temp-${Date.now()}`,
-        title: body.title,
-        bucket: "later",
-        done: false,
-        createdAt: new Date().toISOString(),
-      };
-      optimisticAdd(tempItem);
-      return { snapshot, tempId: tempItem.id };
-    },
-    onError: (_err, _vars, ctx) => {
-      if (ctx?.snapshot) {
-        queryClient.setQueryData(listTodosQueryKey(), ctx.snapshot);
-      }
-    },
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: listTodosQueryKey() }),
   });
 
   const updateMutation = useMutation({
@@ -310,6 +298,7 @@ export const FlodoBoard: React.FC = () => {
   });
 
   const [draft, setDraft] = useState("");
+  const [composerBucket, setComposerBucket] = useState<CreatableBucketId | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [todayLabel, setTodayLabel] = useState<string | null>(null);
 
@@ -328,30 +317,77 @@ export const FlodoBoard: React.FC = () => {
     return () => window.removeEventListener("online", handleOnline);
   }, [queryClient]);
 
-  const handleSubmit = useCallback(
-    (event: React.FormEvent) => {
-      event.preventDefault();
+  const openComposer = useCallback((bucketId: CreatableBucketId) => {
+    setComposerBucket(bucketId);
+  }, []);
+
+  const closeComposer = useCallback(() => {
+    setComposerBucket(null);
+    setDraft("");
+  }, []);
+
+  const createInBucket = useCallback(
+    async (bucketId: CreatableBucketId) => {
       const title = draft.trim();
       if (!title) return;
+
+      const tempId = `temp-${Date.now()}`;
+      const tempItem: TodoWithDescription = {
+        id: tempId,
+        title,
+        bucket: bucketId,
+        done: false,
+        createdAt: new Date().toISOString(),
+        description: "",
+      };
+
+      setDraft("");
+      setComposerBucket(null);
+
       if (!navigator.onLine) {
-        const tempId = `temp-${Date.now()}`;
-        const tempItem: TodoWithDescription = {
-          id: tempId,
-          title,
-          bucket: "later",
-          done: false,
-          createdAt: new Date().toISOString(),
-        };
         optimisticAdd(tempItem);
-        enqueue({ id: opId(), type: "create", title, tempId });
-        setDraft("");
+        enqueue({ id: opId(), type: "create", title, tempId, bucket: bucketId });
         return;
       }
-      createMutation.mutate({ body: { title } });
-      setDraft("");
+
+      const snapshot = queryClient.getQueryData<TodoWithDescription[]>(listTodosQueryKey());
+      optimisticAdd(tempItem);
+
+      try {
+        const created = (await createMutation.mutateAsync({ body: { title } })) as TodoWithDescription;
+        queryClient.setQueryData<TodoWithDescription[]>(listTodosQueryKey(), (prev = []) =>
+          prev.map((todo) => (todo.id === tempId ? { ...created, bucket: bucketId } : todo)),
+        );
+
+        if (bucketId !== "later") {
+          const moveResult = await updateTodo({
+            path: { id: created.id },
+            body: toUpdateTodoRequest({ bucket: bucketId, done: false }),
+          });
+
+          if (moveResult.error) {
+            queryClient.setQueryData<TodoWithDescription[]>(listTodosQueryKey(), (prev = []) =>
+              prev.map((todo) => (todo.id === created.id ? { ...todo, bucket: "later" } : todo)),
+            );
+          }
+        }
+
+        void queryClient.invalidateQueries({ queryKey: listTodosQueryKey() });
+      } catch {
+        queryClient.setQueryData(listTodosQueryKey(), snapshot ?? []);
+      }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [draft, createMutation],
+    [createMutation, draft, optimisticAdd, queryClient],
+  );
+
+  const handleSubmit = useCallback(
+    (bucketId: CreatableBucketId) => {
+      return (event: React.FormEvent) => {
+        event.preventDefault();
+        void createInBucket(bucketId);
+      };
+    },
+    [createInBucket],
   );
 
   const handleDragStart = useCallback((id: string) => {
@@ -442,6 +478,11 @@ export const FlodoBoard: React.FC = () => {
                 key={bucket.id}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop(bucket.id)}
+                onDoubleClick={() => {
+                  if (bucket.id !== "done") {
+                    openComposer(bucket.id);
+                  }
+                }}
                 data-testid={`todo-bucket-${bucket.id}`}
                 className="flex flex-col bg-(--surface)"
               >
@@ -450,21 +491,46 @@ export const FlodoBoard: React.FC = () => {
                     <h2 className="text-[15px] font-medium text-(--sea-ink)">{bucket.label}</h2>
                     <p className="text-[11px] text-(--sea-ink-soft)">{countLabel}</p>
                   </div>
-                  {bucket.id === "today" && todayLabel && (
-                    <span className="text-[12px] text-(--sea-ink-soft)">{todayLabel}</span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {bucket.id === "today" && todayLabel && (
+                      <span className="text-[12px] text-(--sea-ink-soft)">{todayLabel}</span>
+                    )}
+                    {bucket.id !== "done" && (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); openComposer(bucket.id as CreatableBucketId); }}
+                        aria-label={`Add task to ${bucket.label}`}
+                        data-testid={`todo-add-${bucket.id}`}
+                        className="text-[18px] leading-none text-(--sea-ink-soft) hover:text-(--sea-ink) transition-colors"
+                      >
+                        +
+                      </button>
+                    )}
+                  </div>
                 </header>
 
                 <div className="flex flex-1 flex-col px-5 pb-5">
-                  {bucket.id === "later" && (
-                    <form onSubmit={handleSubmit} className="mb-1.5">
+                  {bucket.id !== "done" && composerBucket === bucket.id && (
+                    <form onSubmit={handleSubmit(bucket.id)} className="mb-1.5">
                       <div className="flex items-center gap-2 py-2 border-b border-dashed border-(--row-border)">
                         <span className="h-4 w-4 flex-none rounded-sm border border-(--checkbox-border) bg-transparent" />
                         <input
+                          autoFocus
                           type="text"
                           value={draft}
                           onChange={(e) => setDraft(e.target.value)}
-                          placeholder="Add a task"
+                          onBlur={() => {
+                            if (!draft.trim()) {
+                              closeComposer();
+                            }
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key === "Escape") {
+                              event.preventDefault();
+                              closeComposer();
+                            }
+                          }}
+                          placeholder={`Add to ${bucket.label}`}
                           data-testid="todo-new-input"
                           className="flex-1 border-none bg-transparent text-xs leading-snug text-(--sea-ink) placeholder:text-(--placeholder-text) focus:outline-none focus:ring-0 sm:text-[13px]"
                         />

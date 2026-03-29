@@ -12,6 +12,11 @@ Feature: Todo 基础操作
     When 用户创建一个新的任务
     Then 新任务应该出现在 Later 列中
 
+  @TODO-CRUD-001A @P1
+  Scenario: 用户在 Today 列创建新的待办任务
+    When 用户在 Today 列创建一个新的任务
+    Then 新任务应该出现在 Today 列中
+
   @TODO-CRUD-002 @P0
   Scenario: 用户完成一个任务
     Given 用户已创建一个任务

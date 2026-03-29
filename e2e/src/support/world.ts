@@ -45,6 +45,11 @@ export class CustomWorld extends World {
     return this.page.locator(selectors.bucket(bucketId));
   }
 
+  async openNewTaskInput(bucketId: "later" | "week" | "today"): Promise<void> {
+    await this.bucket(bucketId).dblclick({ position: { x: 24, y: 24 } });
+    await expect(this.bucket(bucketId).locator(selectors.newInput)).toBeVisible();
+  }
+
   async expectBoardVisible(): Promise<void> {
     await expect(this.page.locator(selectors.board)).toBeVisible();
   }

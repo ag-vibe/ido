@@ -8,6 +8,10 @@ import { client as anclaxClient } from "../api-anclax/client.gen";
 import UpdatePrompt from "../components/UpdatePrompt";
 import SettingsDrawer from "../components/SettingsDrawer";
 import { useEffect } from "react";
+import {
+  getThemeInitScript,
+  LIGHT_THEME_CHROME,
+} from "../lib/theme";
 
 installAuthInterceptors(todoClient, anclaxClient);
 
@@ -18,8 +22,7 @@ interface MyRouterContext {
 }
 
 const isProd = import.meta.env.PROD;
-
-const THEME_INIT_SCRIPT = `(function(){try{var stored=window.localStorage.getItem('theme');var mode=(stored==='light'||stored==='dark'||stored==='auto')?stored:'auto';var prefersDark=window.matchMedia('(prefers-color-scheme: dark)').matches;var resolved=mode==='auto'?(prefersDark?'dark':'light'):mode;var root=document.documentElement;root.classList.remove('light','dark');root.classList.add(resolved);if(mode==='auto'){root.removeAttribute('data-theme')}else{root.setAttribute('data-theme',mode)}root.style.colorScheme=resolved;}catch(e){}})();`;
+const THEME_INIT_SCRIPT = getThemeInitScript();
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
   beforeLoad: ({ location }) => {
@@ -42,7 +45,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       },
       ...(isProd
         ? [
-            { name: "theme-color", content: "#cbc0ad" },
+            { name: "theme-color", content: LIGHT_THEME_CHROME },
             { name: "mobile-web-app-capable", content: "yes" },
             { name: "apple-mobile-web-app-capable", content: "yes" },
             { name: "apple-mobile-web-app-status-bar-style", content: "default" },
@@ -95,8 +98,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <HeadContent />
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="font-sans antialiased wrap-anywhere">
         <TanStackQueryProvider>

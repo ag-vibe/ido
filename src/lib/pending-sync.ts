@@ -15,7 +15,13 @@ const QUEUE_KEY = "flodo.pending-ops.v1";
 let drainInFlight: Promise<void> | null = null;
 
 export type PendingOp =
-  | { id: string; type: "create"; title: string; tempId: string }
+  | {
+      id: string;
+      type: "create";
+      title: string;
+      tempId: string;
+      bucket: TodoItem["bucket"];
+    }
   | {
       id: string;
       type: "update";
@@ -55,6 +61,10 @@ export function dequeue(id: string): void {
   save(queue);
 }
 
+function prepend(op: PendingOp): void {
+  save([op, ...load()]);
+}
+
 /** Replace all tempId references in the queue with the real server id after a create resolves. */
 export function replaceTempId(tempId: string, realId: string): void {
   const queue = load().map((op) => {
@@ -89,9 +99,28 @@ export async function drainQueue(queryClient: QueryClient): Promise<void> {
         if (op.type === "create") {
           const res = await createTodo({ body: { title: op.title } });
           if (res.error) throw new Error("create failed");
-          // Update any subsequent ops that referenced the tempId
-          replaceTempId(op.tempId, (res.data as TodoItem).id);
+          const createdTodo = res.data as TodoItem;
+
+          replaceTempId(op.tempId, createdTodo.id);
           dequeue(op.id);
+
+          if (op.bucket !== "later") {
+            const moveRes = await updateTodo({
+              path: { id: createdTodo.id },
+              body: toUpdateTodoRequest({ bucket: op.bucket, done: false }),
+            });
+
+            if (moveRes.error) {
+              prepend({
+                id: opId(),
+                type: "update",
+                todoId: createdTodo.id,
+                patch: { bucket: op.bucket, done: false },
+              });
+              throw new Error("create follow-up update failed");
+            }
+          }
+
           hadSuccess = true;
         } else if (op.type === "update") {
           const res = await updateTodo({

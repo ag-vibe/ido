@@ -15,8 +15,9 @@ When("用户在离线状态下创建一个新的任务", async function (this: C
   const title = `Offline Task ${this.runId}`;
   this.lastTodoTitle = title;
 
-  await this.page.locator(selectors.newInput).fill(title);
-  await this.page.locator(selectors.newInput).press("Enter");
+  await this.openNewTaskInput("later");
+  await this.bucket("later").locator(selectors.newInput).fill(title);
+  await this.bucket("later").locator(selectors.newInput).press("Enter");
   await expect(
     this.bucket("later").locator(selectors.todoCard).filter({ hasText: title }),
   ).toHaveCount(1);

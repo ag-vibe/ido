@@ -7,6 +7,7 @@ import viteReact from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { nitro } from "nitro/vite";
 import { VitePWA } from "vite-plugin-pwa";
+import { LIGHT_THEME_CHROME } from "./src/lib/theme";
 
 const isProd = process.env.NODE_ENV === "production";
 
@@ -36,8 +37,8 @@ const config = defineConfig({
         name: "ido",
         short_name: "ido",
         description: "idea + todo = ido. Collect your ideas and tasks.",
-        theme_color: "#cbc0ad",
-        background_color: "#f5f0e8",
+        theme_color: LIGHT_THEME_CHROME,
+        background_color: LIGHT_THEME_CHROME,
         display: "standalone",
         start_url: "/",
         scope: "/",

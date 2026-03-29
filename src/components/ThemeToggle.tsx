@@ -1,26 +1,5 @@
 import { useEffect, useState } from "react";
-
-type ThemeMode = "light" | "dark" | "auto";
-
-function getInitialMode(): ThemeMode {
-  if (typeof window === "undefined") return "auto";
-  const stored = window.localStorage.getItem("theme");
-  if (stored === "light" || stored === "dark" || stored === "auto") return stored;
-  return "auto";
-}
-
-function applyThemeMode(mode: ThemeMode) {
-  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  const resolved = mode === "auto" ? (prefersDark ? "dark" : "light") : mode;
-  document.documentElement.classList.remove("light", "dark");
-  document.documentElement.classList.add(resolved);
-  if (mode === "auto") {
-    document.documentElement.removeAttribute("data-theme");
-  } else {
-    document.documentElement.setAttribute("data-theme", mode);
-  }
-  document.documentElement.style.colorScheme = resolved;
-}
+import { applyThemeMode, getInitialThemeMode, THEME_STORAGE_KEY, type ThemeMode } from "@/lib/theme";
 
 // Sun icon
 function SunIcon() {
@@ -97,7 +76,7 @@ export default function ThemeToggle() {
   const [mode, setMode] = useState<ThemeMode>("auto");
 
   useEffect(() => {
-    const initialMode = getInitialMode();
+    const initialMode = getInitialThemeMode();
     setMode(initialMode);
     applyThemeMode(initialMode);
   }, []);
@@ -114,7 +93,7 @@ export default function ThemeToggle() {
     const next = NEXT[mode];
     setMode(next);
     applyThemeMode(next);
-    window.localStorage.setItem("theme", next);
+    window.localStorage.setItem(THEME_STORAGE_KEY, next);
   }
 
   const Icon = ICONS[mode];
