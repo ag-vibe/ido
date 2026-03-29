@@ -31,3 +31,7 @@ export function subscribeAuth(fn: () => void): () => void {
 export function ensureValidAccessToken(forceRefresh = false): Promise<string | null> {
   return auth.ensureValidAccessToken(forceRefresh);
 }
+
+export function waitForHydration(): Promise<void> {
+  return auth.waitForHydration();
+}

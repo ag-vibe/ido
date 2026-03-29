@@ -1,7 +1,7 @@
 import { HeadContent, Scripts, createRootRouteWithContext, redirect, useRouter } from "@tanstack/react-router";
 import TanStackQueryProvider from "../integrations/tanstack-query/root-provider";
 import appCss from "../styles.css?url";
-import { getToken, subscribeAuth } from "../lib/auth";
+import { getToken, subscribeAuth, waitForHydration } from "../lib/auth";
 import { installAuthInterceptors } from "../lib/client.config";
 import { client as todoClient } from "../api-gen/client.gen";
 import { client as anclaxClient } from "../api-anclax/client.gen";
@@ -25,10 +25,13 @@ const isProd = import.meta.env.PROD;
 const THEME_INIT_SCRIPT = getThemeInitScript();
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
-  beforeLoad: ({ location }) => {
+  beforeLoad: async ({ location }) => {
     const isLoginPage = location.pathname === "/login";
-    if (!isLoginPage && !getToken()) {
-      throw redirect({ to: "/login" });
+    if (!isLoginPage) {
+      await waitForHydration();
+      if (!getToken()) {
+        throw redirect({ to: "/login" });
+      }
     }
   },
   head: () => ({
@@ -45,12 +48,12 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       },
       ...(isProd
         ? [
-            { name: "theme-color", content: LIGHT_THEME_CHROME },
-            { name: "mobile-web-app-capable", content: "yes" },
-            { name: "apple-mobile-web-app-capable", content: "yes" },
-            { name: "apple-mobile-web-app-status-bar-style", content: "default" },
-            { name: "apple-mobile-web-app-title", content: "ido" },
-          ]
+          { name: "theme-color", content: LIGHT_THEME_CHROME },
+          { name: "mobile-web-app-capable", content: "yes" },
+          { name: "apple-mobile-web-app-capable", content: "yes" },
+          { name: "apple-mobile-web-app-status-bar-style", content: "default" },
+          { name: "apple-mobile-web-app-title", content: "ido" },
+        ]
         : []),
     ],
     links: [
