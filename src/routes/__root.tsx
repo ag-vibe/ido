@@ -26,12 +26,10 @@ const THEME_INIT_SCRIPT = getThemeInitScript();
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
   beforeLoad: async ({ location }) => {
+    await waitForHydration();
     const isLoginPage = location.pathname === "/login";
-    if (!isLoginPage) {
-      await waitForHydration();
-      if (!getToken()) {
-        throw redirect({ to: "/login" });
-      }
+    if (!isLoginPage && !getToken()) {
+      throw redirect({ to: "/login" });
     }
   },
   head: () => ({
