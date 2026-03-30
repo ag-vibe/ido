@@ -2,12 +2,13 @@ import { useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { signInMutation, signUpMutation } from "@/api-anclax/@tanstack/react-query.gen";
-import { getToken, setAuthSession } from "@/lib/auth";
+import { getToken, setAuthSession, waitForHydration } from "@/lib/auth";
 
 type AuthMode = "sign-in" | "sign-up";
 
 export const Route = createFileRoute("/login")({
-  beforeLoad: () => {
+  beforeLoad: async () => {
+    await waitForHydration();
     if (getToken()) {
       throw redirect({ to: "/" });
     }
