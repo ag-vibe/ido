@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Drawer } from "vaul";
+import { Info, Github, Globe, Heart } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import { clearToken } from "../lib/auth";
 import { useRouter } from "@tanstack/react-router";
@@ -95,10 +96,10 @@ function SyncRow() {
   const statusLabel = !online
     ? "Offline"
     : syncing
-    ? "Syncing…"
-    : pending > 0
-    ? `${pending} pending`
-    : "Up to date";
+      ? "Syncing…"
+      : pending > 0
+        ? `${pending} pending`
+        : "Up to date";
 
   return (
     <button
@@ -233,6 +234,68 @@ function ApiUrlRow() {
   );
 }
 
+function AboutRow() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <button type="button" className="sd-row sd-row--spread" onClick={() => setOpen(true)}>
+        <span className="sd-row-label sd-row-label--icon">
+          <Info size={14} className="sd-row-icon" />
+          About
+        </span>
+        <span className="sd-row-hint">v1.0</span>
+      </button>
+
+      <Drawer.Root open={open} onOpenChange={setOpen} direction="bottom">
+        <Drawer.Portal>
+          <Drawer.Overlay className="sd-overlay" style={{ zIndex: 300 }} />
+          <Drawer.Content aria-describedby={undefined} className="sd-content sd-content--sub" style={{ zIndex: 310 }}>
+            <div className="sd-handle-wrap">
+              <div className="sd-handle" />
+            </div>
+            <div className="sd-inner">
+              <Drawer.Title className="sd-title">About</Drawer.Title>
+
+              <div className="sd-about-hero">
+                <img src="/ido.png" alt="ido" className="sd-about-logo" />
+                <div className="sd-about-name">ido</div>
+                <div className="sd-about-ver">Version 1.0</div>
+              </div>
+
+              <div className="sd-group">
+                <div className="sd-row sd-row--static">
+                  <span className="sd-row-label sd-row-label--icon">
+                    <Globe size={14} className="sd-row-icon" />
+                    Built with
+                  </span>
+                  <span className="sd-row-hint">TanStack Start</span>
+                </div>
+                <div className="sd-group-divider" />
+                <div className="sd-row sd-row--static">
+                  <span className="sd-row-label sd-row-label--icon">
+                    <Github size={14} className="sd-row-icon" />
+                    Author
+                  </span>
+                  <span className="sd-row-hint">wibus-wee</span>
+                </div>
+                <div className="sd-group-divider" />
+                <div className="sd-row sd-row--static">
+                  <span className="sd-row-label sd-row-label--icon">
+                    <Heart size={14} className="sd-row-icon" />
+                    Made with
+                  </span>
+                  <span className="sd-row-hint">Ag-Vibe</span>
+                </div>
+              </div>
+            </div>
+          </Drawer.Content>
+        </Drawer.Portal>
+      </Drawer.Root>
+    </>
+  );
+}
+
 export default function SettingsDrawer() {
   const [open, setOpen] = useState(false);
   const router = useRouter();
@@ -258,9 +321,9 @@ export default function SettingsDrawer() {
             className="sd-capsule-btn"
           >
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <path d="M6 2H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              <path d="M11 11l3-3-3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M14 8H6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              <path d="M6 2H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M11 11l3-3-3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M14 8H6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           </button>
           <div className="sd-capsule-divider" />
@@ -330,7 +393,10 @@ export default function SettingsDrawer() {
                 </button>
               </div>
 
-              <p className="sd-about">ido · v1.0 · Built with TanStack Start</p>
+              {/* About */}
+              <div className="sd-group">
+                <AboutRow />
+              </div>
             </div>
           </Drawer.Content>
         </Drawer.Portal>

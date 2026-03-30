@@ -1,7 +1,7 @@
 import { HeadContent, Scripts, createRootRouteWithContext, redirect, useRouter } from "@tanstack/react-router";
 import TanStackQueryProvider from "../integrations/tanstack-query/root-provider";
 import appCss from "../styles.css?url";
-import { getToken, subscribeAuth, waitForHydration } from "../lib/auth";
+import { auth, getToken, subscribeAuth, waitForHydration } from "../lib/auth";
 import { installAuthInterceptors } from "../lib/client.config";
 import { client as todoClient } from "../api-gen/client.gen";
 import { client as anclaxClient } from "../api-anclax/client.gen";
@@ -13,6 +13,17 @@ import {
 } from "../lib/theme";
 
 installAuthInterceptors(todoClient, anclaxClient);
+// If a request is still unauthorized after auth retry, the session is no
+// longer usable for this app instance. Clear it so the route guard redirects
+// back to the login page instead of leaving the board in a broken state.
+todoClient.interceptors.response.use(async (response) => {
+  if (response.status === 401) auth.store.getState().clearSession();
+  return response;
+});
+anclaxClient.interceptors.response.use(async (response) => {
+  if (response.status === 401) auth.store.getState().clearSession();
+  return response;
+});
 
 import type { QueryClient } from "@tanstack/react-query";
 
