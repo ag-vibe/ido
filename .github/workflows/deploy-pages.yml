@@ -33,11 +33,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # - name: Patch Nitro (remove --host flag for wrangler v4 compat)
-      #   run: |
-      #     perl -i -0pe 's/,\s*"--host",\s*"localhost"//g' \
-      #       node_modules/.pnpm/*/node_modules/nitro-nightly/dist/_chunks/nitro3.mjs
-
       - name: Build
         run: pnpm build
         env:
