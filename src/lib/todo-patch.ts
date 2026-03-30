@@ -1,9 +1,5 @@
 import type { TodoItem, UpdateTodoRequest } from "@/api-gen/types.gen";
 
-export type TodoWithDescription = TodoItem & {
-  description?: string;
-};
-
 export type TodoPatch = Partial<Pick<TodoItem, "title" | "bucket" | "done">> & {
   description?: string;
 };

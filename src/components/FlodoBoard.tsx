@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createTodoMutation,
@@ -11,15 +11,9 @@ import { updateTodo } from "@/api-gen/sdk.gen";
 import type { TodoItem } from "@/api-gen/types.gen";
 import { drainQueue, enqueue, opId } from "@/lib/pending-sync";
 import {
-  applyStoredDescriptions,
-  clearTodoDescription,
-  persistTodoDescription,
-} from "@/lib/todo-descriptions";
-import {
   normalizeDescription,
   toUpdateTodoRequest,
   type TodoPatch,
-  type TodoWithDescription,
 } from "@/lib/todo-patch";
 import SyncStatus from "./SyncStatus";
 
@@ -39,13 +33,13 @@ const BUCKETS: { id: BucketId; label: string }[] = [
   { id: "done", label: "Done" },
 ];
 
-function bucketItems(todos: TodoWithDescription[], bucketId: BucketId): TodoWithDescription[] {
+function bucketItems(todos: TodoItem[], bucketId: BucketId): TodoItem[] {
   if (bucketId === "done") return todos.filter((t) => t.done);
   return todos.filter((t) => !t.done && t.bucket === bucketId);
 }
 
 interface TodoCardProps {
-  todo: TodoWithDescription;
+  todo: TodoItem;
   isDragging: boolean;
   onDragStart: (event: React.DragEvent<HTMLDivElement>) => void;
   onDragEnd: () => void;
@@ -233,30 +227,19 @@ TodoCard.displayName = "TodoCard";
 export const FlodoBoard: React.FC = () => {
   const queryClient = useQueryClient();
 
-  const { data: serverTodos = [], isLoading, isError } = useQuery(listTodosOptions());
-  const todos = useMemo(
-    () => applyStoredDescriptions(serverTodos as TodoWithDescription[]),
-    [serverTodos],
-  );
+  const { data: todos = [], isLoading, isError } = useQuery(listTodosOptions());
 
   // --- Optimistic update helpers ---
-  const optimisticAdd = (item: TodoWithDescription) => {
-    queryClient.setQueryData<TodoWithDescription[]>(listTodosQueryKey(), (prev = []) => [
-      item,
-      ...prev,
-    ]);
+  const optimisticAdd = (item: TodoItem) => {
+    queryClient.setQueryData<TodoItem[]>(listTodosQueryKey(), (prev = []) => [item, ...prev]);
   };
   const optimisticUpdate = (id: string, patch: TodoPatch) => {
-    if ("description" in patch) {
-      persistTodoDescription(id, patch.description ?? "");
-    }
-    queryClient.setQueryData<TodoWithDescription[]>(listTodosQueryKey(), (prev = []) =>
+    queryClient.setQueryData<TodoItem[]>(listTodosQueryKey(), (prev = []) =>
       prev.map((t) => (t.id === id ? { ...t, ...patch } : t)),
     );
   };
   const optimisticRemove = (id: string) => {
-    clearTodoDescription(id);
-    queryClient.setQueryData<TodoWithDescription[]>(listTodosQueryKey(), (prev = []) =>
+    queryClient.setQueryData<TodoItem[]>(listTodosQueryKey(), (prev = []) =>
       prev.filter((t) => t.id !== id),
     );
   };
@@ -269,7 +252,7 @@ export const FlodoBoard: React.FC = () => {
     ...updateTodoMutation(),
     onMutate: async ({ path, body }) => {
       await queryClient.cancelQueries({ queryKey: listTodosQueryKey() });
-      const snapshot = queryClient.getQueryData<TodoWithDescription[]>(listTodosQueryKey());
+      const snapshot = queryClient.getQueryData<TodoItem[]>(listTodosQueryKey());
       optimisticUpdate(path.id, body as TodoPatch);
       return { snapshot };
     },
@@ -285,7 +268,7 @@ export const FlodoBoard: React.FC = () => {
     ...deleteTodoMutation(),
     onMutate: async ({ path }) => {
       await queryClient.cancelQueries({ queryKey: listTodosQueryKey() });
-      const snapshot = queryClient.getQueryData<TodoWithDescription[]>(listTodosQueryKey());
+      const snapshot = queryClient.getQueryData<TodoItem[]>(listTodosQueryKey());
       optimisticRemove(path.id);
       return { snapshot };
     },
@@ -332,7 +315,7 @@ export const FlodoBoard: React.FC = () => {
       if (!title) return;
 
       const tempId = `temp-${Date.now()}`;
-      const tempItem: TodoWithDescription = {
+      const tempItem: TodoItem = {
         id: tempId,
         title,
         bucket: bucketId,
@@ -350,12 +333,12 @@ export const FlodoBoard: React.FC = () => {
         return;
       }
 
-      const snapshot = queryClient.getQueryData<TodoWithDescription[]>(listTodosQueryKey());
+      const snapshot = queryClient.getQueryData<TodoItem[]>(listTodosQueryKey());
       optimisticAdd(tempItem);
 
       try {
-        const created = (await createMutation.mutateAsync({ body: { title } })) as TodoWithDescription;
-        queryClient.setQueryData<TodoWithDescription[]>(listTodosQueryKey(), (prev = []) =>
+        const created = (await createMutation.mutateAsync({ body: { title } })) as TodoItem;
+        queryClient.setQueryData<TodoItem[]>(listTodosQueryKey(), (prev = []) =>
           prev.map((todo) => (todo.id === tempId ? { ...created, bucket: bucketId } : todo)),
         );
 
@@ -366,7 +349,7 @@ export const FlodoBoard: React.FC = () => {
           });
 
           if (moveResult.error) {
-            queryClient.setQueryData<TodoWithDescription[]>(listTodosQueryKey(), (prev = []) =>
+            queryClient.setQueryData<TodoItem[]>(listTodosQueryKey(), (prev = []) =>
               prev.map((todo) => (todo.id === created.id ? { ...todo, bucket: "later" } : todo)),
             );
           }
