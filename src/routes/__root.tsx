@@ -25,6 +25,9 @@ const THEME_INIT_SCRIPT = getThemeInitScript();
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
   beforeLoad: async ({ location }) => {
+    // Auth is persisted in localStorage, so the server cannot reliably decide
+    // whether the user is logged in during SSR.
+    if (typeof window === "undefined") return;
     await waitForHydration();
     const isLoginPage = location.pathname === "/login";
     if (!isLoginPage && !getToken()) {
@@ -68,11 +71,24 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    return subscribeAuth(() => {
+    let cancelled = false;
+    const unsubscribe = subscribeAuth(() => {
       if (!getToken()) {
         void router.navigate({ to: "/login" });
       }
     });
+
+    void waitForHydration().then(() => {
+      if (cancelled) return;
+      if (router.state.location.pathname !== "/login" && !getToken()) {
+        void router.navigate({ to: "/login" });
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
   }, [router]);
 
   useEffect(() => {

@@ -8,6 +8,7 @@ type AuthMode = "sign-in" | "sign-up";
 
 export const Route = createFileRoute("/login")({
   beforeLoad: async () => {
+    if (typeof window === "undefined") return;
     await waitForHydration();
     if (getToken()) {
       throw redirect({ to: "/" });
