@@ -69,12 +69,14 @@ const config = defineConfig({
         ],
       },
       workbox: {
-        // Only precache built assets in production.
-        globPatterns: isProd ? ["**/*.{js,css,html,ico,png,svg,woff,woff2}"] : [],
-        // SPA fallback: serve index.html for any non-file navigation
-        navigateFallback: "/index.html",
-        // Don't intercept API requests — TanStack Query + pending-sync handles that
-        navigateFallbackDenylist: [/^\/api\//],
+        // Only precache static assets — never HTML.
+        // HTML may contain dehydrated router/query state from SSR; caching it
+        // would cause the SW to serve a stale "unauthenticated" shell even when
+        // localStorage holds a valid token, sending logged-in users to /login.
+        globPatterns: isProd ? ["**/*.{js,css,ico,png,svg,woff,woff2}"] : [],
+        // No navigateFallback: navigation requests always go to the network so
+        // the server (Cloudflare) serves fresh HTML. Cloudflare Pages already
+        // handles the SPA fallback itself.
         runtimeCaching: [
           {
             urlPattern: /^\/api\//,
