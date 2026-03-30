@@ -5,7 +5,6 @@ import { getToken, subscribeAuth, waitForHydration } from "../lib/auth";
 import { installAuthInterceptors } from "../lib/client.config";
 import { client as todoClient } from "../api-gen/client.gen";
 import { client as anclaxClient } from "../api-anclax/client.gen";
-import UpdatePrompt from "../components/UpdatePrompt";
 import SettingsDrawer from "../components/SettingsDrawer";
 import { useEffect } from "react";
 import {
@@ -77,23 +76,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   }, [router]);
 
   useEffect(() => {
-    if (!import.meta.env.DEV || typeof window === "undefined") return;
-
-    void (async () => {
-      try {
-        if ("serviceWorker" in navigator) {
-          const registrations = await navigator.serviceWorker.getRegistrations();
-          await Promise.allSettled(registrations.map((registration) => registration.unregister()));
-        }
-
-        if ("caches" in window) {
-          const keys = await caches.keys();
-          await Promise.allSettled(keys.map((key) => caches.delete(key)));
-        }
-      } catch (error) {
-        console.warn("Failed to cleanup service worker/cache in dev", error);
-      }
-    })();
+    if (!import.meta.env.PROD || typeof window === "undefined" || !("serviceWorker" in navigator)) return;
+    void navigator.serviceWorker.register("/sw.js");
   }, []);
 
   return (
@@ -107,7 +91,6 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           {children}
           <SettingsDrawer />
         </TanStackQueryProvider>
-        <UpdatePrompt />
         <Scripts />
       </body>
     </html>
