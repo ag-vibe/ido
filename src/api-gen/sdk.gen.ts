@@ -2,8 +2,8 @@
 
 import { type Client, formDataBodySerializer, type Options as Options2, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateTodoData, CreateTodoResponses, DeleteAttachmentData, DeleteAttachmentErrors, DeleteAttachmentResponses, DeleteTodoData, DeleteTodoErrors, DeleteTodoResponses, DownloadAttachmentData, DownloadAttachmentErrors, DownloadAttachmentResponses, GetAttachmentData, GetAttachmentErrors, GetAttachmentResponses, LinkAttachmentData, LinkAttachmentErrors, LinkAttachmentResponses, ListAttachmentsByResourceData, ListAttachmentsByResourceResponses, ListTodosData, ListTodosResponses, UnlinkAttachmentData, UnlinkAttachmentErrors, UnlinkAttachmentResponses, UpdateTodoData, UpdateTodoErrors, UpdateTodoResponses, UploadAttachmentData, UploadAttachmentResponses } from './types.gen';
-import { zCreateTodoData, zDeleteAttachmentData, zDeleteTodoData, zDownloadAttachmentData, zGetAttachmentData, zLinkAttachmentData, zListAttachmentsByResourceData, zListTodosData, zUnlinkAttachmentData, zUpdateTodoData, zUploadAttachmentData } from './zod.gen';
+import type { CreateTodoData, CreateTodoResponses, DeleteAttachmentData, DeleteAttachmentErrors, DeleteAttachmentResponses, DeleteTodoData, DeleteTodoErrors, DeleteTodoResponses, DeviceApproveData, DeviceApproveResponses, DeviceAuthorizeData, DeviceAuthorizeResponses, DeviceTokenData, DeviceTokenResponses, DeviceVerifyData, DeviceVerifyResponses, DownloadAttachmentData, DownloadAttachmentErrors, DownloadAttachmentResponses, GetAttachmentData, GetAttachmentErrors, GetAttachmentResponses, LinkAttachmentData, LinkAttachmentErrors, LinkAttachmentResponses, ListAttachmentsByResourceData, ListAttachmentsByResourceResponses, ListTodosData, ListTodosResponses, UnlinkAttachmentData, UnlinkAttachmentErrors, UnlinkAttachmentResponses, UpdateTodoData, UpdateTodoErrors, UpdateTodoResponses, UploadAttachmentData, UploadAttachmentResponses } from './types.gen';
+import { zCreateTodoData, zDeleteAttachmentData, zDeleteTodoData, zDeviceApproveData, zDeviceAuthorizeData, zDeviceTokenData, zDeviceVerifyData, zDownloadAttachmentData, zGetAttachmentData, zLinkAttachmentData, zListAttachmentsByResourceData, zListTodosData, zUnlinkAttachmentData, zUpdateTodoData, zUploadAttachmentData } from './zod.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -90,6 +90,55 @@ export const linkAttachment = <ThrowOnError extends boolean = false>(options: Op
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * Approve device code
+ */
+export const deviceApprove = <ThrowOnError extends boolean = false>(options: Options<DeviceApproveData, ThrowOnError>) => (options.client ?? client).post<DeviceApproveResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await zDeviceApproveData.parseAsync(data),
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/auth/device/approve',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Start device code flow
+ */
+export const deviceAuthorize = <ThrowOnError extends boolean = false>(options: Options<DeviceAuthorizeData, ThrowOnError>) => (options.client ?? client).post<DeviceAuthorizeResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await zDeviceAuthorizeData.parseAsync(data),
+    url: '/auth/device/authorize',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Poll device code token
+ */
+export const deviceToken = <ThrowOnError extends boolean = false>(options: Options<DeviceTokenData, ThrowOnError>) => (options.client ?? client).post<DeviceTokenResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await zDeviceTokenData.parseAsync(data),
+    url: '/auth/device/token',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Device verification page
+ */
+export const deviceVerify = <ThrowOnError extends boolean = false>(options?: Options<DeviceVerifyData, ThrowOnError>) => (options?.client ?? client).get<DeviceVerifyResponses, unknown, ThrowOnError>({
+    requestValidator: async (data) => await zDeviceVerifyData.parseAsync(data),
+    url: '/auth/device/verify',
+    ...options
 });
 
 /**

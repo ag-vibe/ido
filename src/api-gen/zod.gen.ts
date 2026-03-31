@@ -11,13 +11,93 @@ export const zAttachment = z.object({
     sizeBytes: z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' })
 });
 
+export const zCounter = z.object({
+    count: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
 export const zCreateTodoRequest = z.object({
     title: z.string()
+});
+
+export const zDeviceApproveRequest = z.object({
+    userCode: z.string()
+});
+
+export const zDeviceApproveResult = z.object({
+    status: z.string()
+});
+
+export const zDeviceAuthorizeRequest = z.object({
+    clientId: z.string(),
+    deviceName: z.string().optional(),
+    scope: z.string().optional()
+});
+
+export const zDeviceAuthorizeResult = z.object({
+    deviceCode: z.string(),
+    expiresIn: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+    interval: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+    userCode: z.string(),
+    verificationUri: z.string(),
+    verificationUriComplete: z.string()
+});
+
+export const zDeviceTokenRequest = z.object({
+    deviceCode: z.string()
+});
+
+export const zDeviceTokenResult = z.object({
+    accessToken: z.string().optional(),
+    error: z.string().optional(),
+    errorDescription: z.string().optional(),
+    refreshToken: z.string().optional(),
+    tokenType: z.string().optional()
 });
 
 export const zLinkAttachmentRequest = z.object({
     resourceId: z.uuid(),
     resourceType: z.string()
+});
+
+export const zMemoContent = z.record(z.string(), z.unknown());
+
+export const zCreateMemoRequest = z.object({
+    content: zMemoContent,
+    excerpt: z.string(),
+    plainText: z.string(),
+    references: z.array(z.uuid()),
+    tags: z.array(z.string())
+});
+
+export const zMemoState = z.enum(['active', 'archived']);
+
+export const zMemo = z.object({
+    archivedAt: z.iso.datetime().nullish(),
+    content: zMemoContent,
+    createdAt: z.iso.datetime(),
+    excerpt: z.string(),
+    id: z.uuid(),
+    plainText: z.string(),
+    references: z.array(z.uuid()),
+    state: zMemoState,
+    tags: z.array(z.string()),
+    updatedAt: z.iso.datetime()
+});
+
+export const zMemoSummary = z.object({
+    archivedAt: z.iso.datetime().nullish(),
+    createdAt: z.iso.datetime(),
+    excerpt: z.string(),
+    id: z.uuid(),
+    plainText: z.string(),
+    state: zMemoState,
+    tags: z.array(z.string()),
+    updatedAt: z.iso.datetime()
+});
+
+export const zTagSummary = z.object({
+    count: z.coerce.bigint().min(BigInt('-9223372036854775808'), { error: 'Invalid value: Expected int64 to be >= -9223372036854775808' }).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
+    name: z.string()
 });
 
 export const zTodoItem = z.object({
@@ -29,9 +109,18 @@ export const zTodoItem = z.object({
     createdAt: z.iso.datetime(),
     description: z.string(),
     done: z.boolean(),
-    doneAt: z.iso.datetime().nullable().optional(),
+    doneAt: z.iso.datetime().nullish(),
     id: z.uuid(),
     title: z.string()
+});
+
+export const zUpdateMemoRequest = z.object({
+    content: zMemoContent,
+    excerpt: z.string(),
+    plainText: z.string(),
+    references: z.array(z.uuid()),
+    state: zMemoState.optional(),
+    tags: z.array(z.string())
 });
 
 export const zUpdateTodoRequest = z.object({
@@ -90,6 +179,30 @@ export const zLinkAttachmentData = z.object({
     path: z.object({
         id: z.uuid()
     }),
+    query: z.never().optional()
+});
+
+export const zDeviceApproveData = z.object({
+    body: zDeviceApproveRequest,
+    path: z.never().optional(),
+    query: z.never().optional()
+});
+
+export const zDeviceAuthorizeData = z.object({
+    body: zDeviceAuthorizeRequest,
+    path: z.never().optional(),
+    query: z.never().optional()
+});
+
+export const zDeviceTokenData = z.object({
+    body: zDeviceTokenRequest,
+    path: z.never().optional(),
+    query: z.never().optional()
+});
+
+export const zDeviceVerifyData = z.object({
+    body: z.never().optional(),
+    path: z.never().optional(),
     query: z.never().optional()
 });
 

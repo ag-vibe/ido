@@ -1,10 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { signInMutation, signUpMutation } from "@/api-anclax/@tanstack/react-query.gen";
+import { deviceAuthorizeMutation, deviceTokenMutation } from "@/api-gen/@tanstack/react-query.gen";
 import { getToken, setAuthSession, waitForHydration } from "@/lib/auth";
-
-type AuthMode = "sign-in" | "sign-up";
+import { getApiBaseUrl } from "@/lib/api-base-url";
 
 export const Route = createFileRoute("/login")({
   beforeLoad: async () => {
@@ -20,56 +19,124 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const navigate = Route.useNavigate();
 
-  const [mode, setMode] = useState<AuthMode>("sign-in");
-  const [name, setName] = useState("");
-  const [password, setPassword] = useState("");
+  const [deviceCode, setDeviceCode] = useState<string | null>(null);
+  const [userCode, setUserCode] = useState<string | null>(null);
+  const [verificationUrl, setVerificationUrl] = useState<string | null>(null);
+  const [intervalSec, setIntervalSec] = useState<number>(5);
+  const [status, setStatus] = useState<string>("Preparing device login...");
+  const [error, setError] = useState<string | null>(null);
 
-  const signIn = useMutation(signInMutation());
-  const signUp = useMutation(signUpMutation());
+  const pollTimerRef = useRef<number | null>(null);
 
-  const isSubmitting = signIn.isPending || signUp.isPending;
-  const activeError = signIn.error ?? signUp.error;
+  const authorizeMutation = useMutation(deviceAuthorizeMutation());
+  const tokenMutation = useMutation(deviceTokenMutation());
 
-  const title = useMemo(
-    () => (mode === "sign-in" ? "Welcome back" : "Create your account"),
-    [mode]
-  );
+  const isLoading = authorizeMutation.isPending || tokenMutation.isPending;
 
-  const subtitle = useMemo(
-    () =>
-      mode === "sign-in"
-        ? "A silky, focused flow for your daily priorities."
-        : "Start clean, then glide into your work rhythm.",
-    [mode]
-  );
+  const title = "Continue on another device";
+  const subtitle = "Open the verification page, sign in, and we will finish here automatically.";
 
-  const submitLabel =
-    mode === "sign-in"
-      ? isSubmitting
-        ? "Signing in..."
-        : "Sign in"
-      : isSubmitting
-        ? "Creating..."
-        : "Create account";
+  const canOpen = Boolean(verificationUrl);
+  const displayCode = useMemo(() => userCode ?? "—", [userCode]);
+  const apiBase = useMemo(() => getApiBaseUrl(), []);
+  const resolvedVerificationUrl = useMemo(() => {
+    if (!verificationUrl) return null;
+    try {
+      return new URL(verificationUrl, apiBase).toString();
+    } catch {
+      return verificationUrl;
+    }
+  }, [verificationUrl, apiBase]);
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    const trimmedName = name.trim();
-    if (!trimmedName || !password) return;
+  useEffect(() => {
+    void startDeviceLogin();
+    return () => {
+      if (pollTimerRef.current) {
+        window.clearTimeout(pollTimerRef.current);
+      }
+    };
+  }, []);
 
-    const result =
-      mode === "sign-in"
-        ? await signIn.mutateAsync({ body: { name: trimmedName, password } })
-        : await signUp.mutateAsync({ body: { name: trimmedName, password } });
+  async function startDeviceLogin() {
+    setError(null);
+    setStatus("Requesting device code...");
+    try {
+      const res = await authorizeMutation.mutateAsync({
+        body: {
+          clientId: "todo",
+        },
+      });
+      setDeviceCode(res.deviceCode);
+      setUserCode(res.userCode);
+      setVerificationUrl(res.verificationUriComplete);
+      setIntervalSec(res.interval || 5);
+      setStatus("Device code ready. Open the verification page.");
+      schedulePoll(res.deviceCode, res.interval || 5);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to start device login.");
+      setStatus("Failed to request device code.");
+    }
+  }
 
-    setAuthSession({
-      accessToken: result.accessToken,
-      refreshToken: result.refreshToken,
-      tokenType: result.tokenType,
-    });
+  function schedulePoll(code: string, interval: number) {
+    if (pollTimerRef.current) {
+      window.clearTimeout(pollTimerRef.current);
+    }
+    pollTimerRef.current = window.setTimeout(() => {
+      void pollToken(code, interval);
+    }, Math.max(1, interval) * 1000);
+  }
 
-    void navigate({ to: "/" });
-  };
+  async function pollToken(code: string, interval: number) {
+    try {
+      const res = await tokenMutation.mutateAsync({
+        body: { deviceCode: code },
+      });
+
+      if (res.accessToken && res.refreshToken && res.tokenType) {
+        setStatus("Login approved. Redirecting...");
+        if (pollTimerRef.current) {
+          window.clearTimeout(pollTimerRef.current);
+        }
+        setAuthSession({
+          accessToken: res.accessToken,
+          refreshToken: res.refreshToken,
+          tokenType: res.tokenType,
+        });
+        void navigate({ to: "/" });
+        return;
+      }
+
+      if (res.error === "slow_down") {
+        setStatus(res.errorDescription ?? "Waiting for approval...");
+        schedulePoll(code, interval + 2);
+        return;
+      }
+
+      if (res.error === "expired_token") {
+        setStatus("Device code expired. Restarting...");
+        void startDeviceLogin();
+        return;
+      }
+
+      if (res.error === "access_denied") {
+        setStatus("Access denied. Restarting...");
+        void startDeviceLogin();
+        return;
+      }
+
+      setStatus(res.errorDescription ?? "Waiting for approval...");
+      schedulePoll(code, interval);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Polling failed.");
+      schedulePoll(code, interval + 2);
+    }
+  }
+
+  function handleOpenVerification() {
+    if (!resolvedVerificationUrl) return;
+    window.open(resolvedVerificationUrl, "_blank", "width=480,height=640");
+  }
 
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-(--bg-base) px-4 py-10">
@@ -85,75 +152,45 @@ function LoginPage() {
         <h1 className="text-2xl font-medium text-(--sea-ink)">{title}</h1>
         <p className="mt-2 text-sm leading-relaxed text-(--sea-ink-soft)">{subtitle}</p>
 
-        <div className="mt-6 grid grid-cols-2 rounded-xl border border-[var(--tab-border)] bg-[var(--tab-bg)] p-1">
+        <div className="mt-6 rounded-2xl border border-[var(--input-border)] bg-[var(--input-bg)] p-4 text-center">
+          <p className="text-[11px] uppercase tracking-[0.2em] text-[var(--label-muted)]">
+            User code
+          </p>
+          <p className="mt-2 text-2xl font-semibold tracking-[0.3em] text-(--sea-ink)">
+            {displayCode}
+          </p>
+          <p className="mt-2 text-xs text-(--sea-ink-soft)">
+            {deviceCode ? "Waiting for approval..." : "Requesting device code..."}
+          </p>
+        </div>
+
+        {error && (
+          <p className="mt-4 rounded-lg border border-[var(--error-border)] bg-[var(--error-bg)] px-3 py-2 text-xs text-[var(--error-text)]">
+            {error}
+          </p>
+        )}
+
+        <div className="mt-6 space-y-3">
           <button
             type="button"
-            onClick={() => setMode("sign-in")}
-            className={`rounded-lg px-3 py-2 text-sm transition ${mode === "sign-in"
-              ? "bg-(--sea-ink) text-[var(--btn-primary-text)]"
-              : "text-(--sea-ink-soft) hover:text-(--sea-ink)"
-              }`}
+            onClick={handleOpenVerification}
+            disabled={!canOpen}
+            className="inline-flex w-full items-center justify-center rounded-xl bg-(--sea-ink) px-4 py-2.5 text-sm text-[var(--btn-primary-text)] shadow-[0_10px_24px_var(--btn-shadow)] transition hover:-translate-y-px hover:shadow-[0_14px_32px_var(--btn-shadow-hover)] disabled:translate-y-0 disabled:opacity-70"
           >
-            Sign in
+            Open verification page
           </button>
           <button
             type="button"
-            onClick={() => setMode("sign-up")}
-            className={`rounded-lg px-3 py-2 text-sm transition ${mode === "sign-up"
-              ? "bg-(--sea-ink) text-[var(--btn-primary-text)]"
-              : "text-(--sea-ink-soft) hover:text-(--sea-ink)"
-              }`}
+            onClick={() => void startDeviceLogin()}
+            disabled={isLoading}
+            className="inline-flex w-full items-center justify-center rounded-xl border border-[var(--input-border)] px-4 py-2.5 text-sm text-(--sea-ink) transition hover:bg-[var(--input-bg)] disabled:opacity-70"
           >
-            Sign up
+            Refresh code
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-medium text-(--sea-ink-soft)">Name</span>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              autoComplete="username"
-              placeholder="test"
-              className="w-full rounded-xl border border-[var(--input-border)] bg-[var(--input-bg)] px-3.5 py-2.5 text-sm text-(--sea-ink) outline-none transition placeholder:text-[var(--input-placeholder)] focus:border-[var(--input-border-focus)] focus:ring-2 focus:ring-[var(--input-ring-focus)]"
-            />
-          </label>
-
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-medium text-(--sea-ink-soft)">Password</span>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete={mode === "sign-in" ? "current-password" : "new-password"}
-              placeholder="test"
-              className="w-full rounded-xl border border-[var(--input-border)] bg-[var(--input-bg)] px-3.5 py-2.5 text-sm text-(--sea-ink) outline-none transition placeholder:text-[var(--input-placeholder)] focus:border-[var(--input-border-focus)] focus:ring-2 focus:ring-[var(--input-ring-focus)]"
-            />
-          </label>
-
-          {activeError && (
-            <p className="rounded-lg border border-[var(--error-border)] bg-[var(--error-bg)] px-3 py-2 text-xs text-[var(--error-text)]">
-              {activeError instanceof Error
-                ? activeError.message
-                : "Authentication failed. Please try again."}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="mt-2 inline-flex w-full items-center justify-center rounded-xl bg-(--sea-ink) px-4 py-2.5 text-sm text-[var(--btn-primary-text)] shadow-[0_10px_24px_var(--btn-shadow)] transition hover:-translate-y-px hover:shadow-[0_14px_32px_var(--btn-shadow-hover)] disabled:translate-y-0 disabled:opacity-70"
-          >
-            {submitLabel}
-          </button>
-        </form>
-
         <p className="mt-4 text-center text-[11px] text-(--sea-ink-soft)">
-          Dev default in README: use name/password as test/test.
+          {status}
         </p>
       </section>
     </main>

@@ -13,13 +13,95 @@ export type Attachment = {
     sizeBytes: number;
 };
 
+export type Counter = {
+    count: number;
+};
+
+export type CreateMemoRequest = {
+    content: MemoContent;
+    excerpt: string;
+    plainText: string;
+    references: Array<string>;
+    tags: Array<string>;
+};
+
 export type CreateTodoRequest = {
     title: string;
+};
+
+export type DeviceApproveRequest = {
+    userCode: string;
+};
+
+export type DeviceApproveResult = {
+    status: string;
+};
+
+export type DeviceAuthorizeRequest = {
+    clientId: string;
+    deviceName?: string;
+    scope?: string;
+};
+
+export type DeviceAuthorizeResult = {
+    deviceCode: string;
+    expiresIn: number;
+    interval: number;
+    userCode: string;
+    verificationUri: string;
+    verificationUriComplete: string;
+};
+
+export type DeviceTokenRequest = {
+    deviceCode: string;
+};
+
+export type DeviceTokenResult = {
+    accessToken?: string;
+    error?: string;
+    errorDescription?: string;
+    refreshToken?: string;
+    tokenType?: string;
 };
 
 export type LinkAttachmentRequest = {
     resourceId: string;
     resourceType: string;
+};
+
+export type Memo = {
+    archivedAt?: string | null;
+    content: MemoContent;
+    createdAt: string;
+    excerpt: string;
+    id: string;
+    plainText: string;
+    references: Array<string>;
+    state: MemoState;
+    tags: Array<string>;
+    updatedAt: string;
+};
+
+export type MemoContent = {
+    [key: string]: unknown;
+};
+
+export type MemoState = 'active' | 'archived';
+
+export type MemoSummary = {
+    archivedAt?: string | null;
+    createdAt: string;
+    excerpt: string;
+    id: string;
+    plainText: string;
+    state: MemoState;
+    tags: Array<string>;
+    updatedAt: string;
+};
+
+export type TagSummary = {
+    count: number;
+    name: string;
 };
 
 export type TodoItem = {
@@ -30,6 +112,15 @@ export type TodoItem = {
     doneAt?: string | null;
     id: string;
     title: string;
+};
+
+export type UpdateMemoRequest = {
+    content: MemoContent;
+    excerpt: string;
+    plainText: string;
+    references: Array<string>;
+    state?: MemoState;
+    tags: Array<string>;
 };
 
 export type UpdateTodoRequest = {
@@ -181,6 +272,70 @@ export type LinkAttachmentResponses = {
 };
 
 export type LinkAttachmentResponse = LinkAttachmentResponses[keyof LinkAttachmentResponses];
+
+export type DeviceApproveData = {
+    body: DeviceApproveRequest;
+    path?: never;
+    query?: never;
+    url: '/auth/device/approve';
+};
+
+export type DeviceApproveResponses = {
+    /**
+     * Approved
+     */
+    200: DeviceApproveResult;
+};
+
+export type DeviceApproveResponse = DeviceApproveResponses[keyof DeviceApproveResponses];
+
+export type DeviceAuthorizeData = {
+    body: DeviceAuthorizeRequest;
+    path?: never;
+    query?: never;
+    url: '/auth/device/authorize';
+};
+
+export type DeviceAuthorizeResponses = {
+    /**
+     * Device code issued
+     */
+    200: DeviceAuthorizeResult;
+};
+
+export type DeviceAuthorizeResponse = DeviceAuthorizeResponses[keyof DeviceAuthorizeResponses];
+
+export type DeviceTokenData = {
+    body: DeviceTokenRequest;
+    path?: never;
+    query?: never;
+    url: '/auth/device/token';
+};
+
+export type DeviceTokenResponses = {
+    /**
+     * Device token polling result
+     */
+    200: DeviceTokenResult;
+};
+
+export type DeviceTokenResponse = DeviceTokenResponses[keyof DeviceTokenResponses];
+
+export type DeviceVerifyData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/auth/device/verify';
+};
+
+export type DeviceVerifyResponses = {
+    /**
+     * Verification page
+     */
+    200: string;
+};
+
+export type DeviceVerifyResponse = DeviceVerifyResponses[keyof DeviceVerifyResponses];
 
 export type ListAttachmentsByResourceData = {
     body?: never;

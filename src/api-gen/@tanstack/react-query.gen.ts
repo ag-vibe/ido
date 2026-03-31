@@ -3,8 +3,8 @@
 import { type DefaultError, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { createTodo, deleteAttachment, deleteTodo, downloadAttachment, getAttachment, linkAttachment, listAttachmentsByResource, listTodos, type Options, unlinkAttachment, updateTodo, uploadAttachment } from '../sdk.gen';
-import type { CreateTodoData, CreateTodoResponse, DeleteAttachmentData, DeleteAttachmentResponse, DeleteTodoData, DeleteTodoResponse, DownloadAttachmentData, DownloadAttachmentResponse, GetAttachmentData, GetAttachmentResponse, LinkAttachmentData, LinkAttachmentResponse, ListAttachmentsByResourceData, ListAttachmentsByResourceResponse, ListTodosData, ListTodosResponse, UnlinkAttachmentData, UnlinkAttachmentResponse, UpdateTodoData, UpdateTodoResponse, UploadAttachmentData, UploadAttachmentResponse } from '../types.gen';
+import { createTodo, deleteAttachment, deleteTodo, deviceApprove, deviceAuthorize, deviceToken, deviceVerify, downloadAttachment, getAttachment, linkAttachment, listAttachmentsByResource, listTodos, type Options, unlinkAttachment, updateTodo, uploadAttachment } from '../sdk.gen';
+import type { CreateTodoData, CreateTodoResponse, DeleteAttachmentData, DeleteAttachmentResponse, DeleteTodoData, DeleteTodoResponse, DeviceApproveData, DeviceApproveResponse, DeviceAuthorizeData, DeviceAuthorizeResponse, DeviceTokenData, DeviceTokenResponse, DeviceVerifyData, DeviceVerifyResponse, DownloadAttachmentData, DownloadAttachmentResponse, GetAttachmentData, GetAttachmentResponse, LinkAttachmentData, LinkAttachmentResponse, ListAttachmentsByResourceData, ListAttachmentsByResourceResponse, ListTodosData, ListTodosResponse, UnlinkAttachmentData, UnlinkAttachmentResponse, UpdateTodoData, UpdateTodoResponse, UploadAttachmentData, UploadAttachmentResponse } from '../types.gen';
 
 /**
  * Upload attachment
@@ -142,6 +142,75 @@ export const linkAttachmentMutation = (options?: Partial<Options<LinkAttachmentD
     };
     return mutationOptions;
 };
+
+/**
+ * Approve device code
+ */
+export const deviceApproveMutation = (options?: Partial<Options<DeviceApproveData>>): UseMutationOptions<DeviceApproveResponse, DefaultError, Options<DeviceApproveData>> => {
+    const mutationOptions: UseMutationOptions<DeviceApproveResponse, DefaultError, Options<DeviceApproveData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await deviceApprove({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Start device code flow
+ */
+export const deviceAuthorizeMutation = (options?: Partial<Options<DeviceAuthorizeData>>): UseMutationOptions<DeviceAuthorizeResponse, DefaultError, Options<DeviceAuthorizeData>> => {
+    const mutationOptions: UseMutationOptions<DeviceAuthorizeResponse, DefaultError, Options<DeviceAuthorizeData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await deviceAuthorize({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Poll device code token
+ */
+export const deviceTokenMutation = (options?: Partial<Options<DeviceTokenData>>): UseMutationOptions<DeviceTokenResponse, DefaultError, Options<DeviceTokenData>> => {
+    const mutationOptions: UseMutationOptions<DeviceTokenResponse, DefaultError, Options<DeviceTokenData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await deviceToken({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const deviceVerifyQueryKey = (options?: Options<DeviceVerifyData>) => createQueryKey('deviceVerify', options);
+
+/**
+ * Device verification page
+ */
+export const deviceVerifyOptions = (options?: Options<DeviceVerifyData>) => queryOptions<DeviceVerifyResponse, DefaultError, DeviceVerifyResponse, ReturnType<typeof deviceVerifyQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await deviceVerify({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: deviceVerifyQueryKey(options)
+});
 
 export const listAttachmentsByResourceQueryKey = (options: Options<ListAttachmentsByResourceData>) => createQueryKey('listAttachmentsByResource', options);
 
