@@ -27,6 +27,7 @@ export type TodoItem = {
     createdAt: string;
     description: string;
     done: boolean;
+    doneAt?: string | null;
     id: string;
     title: string;
 };

@@ -33,6 +33,16 @@ const BUCKETS: { id: BucketId; label: string }[] = [
   { id: "done", label: "Done" },
 ];
 
+function formatFinishDate(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  });
+}
+
 function bucketItems(todos: TodoItem[], bucketId: BucketId): TodoItem[] {
   if (bucketId === "done") return todos.filter((t) => t.done);
   return todos.filter((t) => !t.done && t.bucket === bucketId);
@@ -67,6 +77,8 @@ const TodoCard: React.FC<TodoCardProps> = React.memo(
     const descriptionTextClass = todo.done
       ? "break-words text-[11px] leading-snug text-(--sea-ink-soft) opacity-75 line-through decoration-[var(--strike-color)]"
       : "break-words text-[11px] leading-snug text-(--sea-ink-soft)";
+    const doneAtLabel =
+      todo.done && todo.doneAt ? `Finished ${formatFinishDate(todo.doneAt)}` : null;
 
     const startEdit = () => {
       const currentDescription = normalizeDescription(todo.description);
@@ -202,6 +214,11 @@ const TodoCard: React.FC<TodoCardProps> = React.memo(
                   {normalizeDescription(todo.description)}
                 </p>
               )}
+              {doneAtLabel && (
+                <p data-testid="todo-done-at" className="text-[10px] text-(--sea-ink-soft)">
+                  {doneAtLabel}
+                </p>
+              )}
             </div>
           )}
         </div>
@@ -233,10 +250,17 @@ export const FlodoBoard: React.FC = () => {
   const optimisticAdd = (item: TodoItem) => {
     queryClient.setQueryData<TodoItem[]>(listTodosQueryKey(), (prev = []) => [item, ...prev]);
   };
-  const optimisticUpdate = (id: string, patch: TodoPatch) => {
+  const optimisticUpdate = (id: string, patch: Partial<TodoItem>) => {
     queryClient.setQueryData<TodoItem[]>(listTodosQueryKey(), (prev = []) =>
       prev.map((t) => (t.id === id ? { ...t, ...patch } : t)),
     );
+  };
+  const optimisticPatch = (todo: TodoItem | undefined, patch: TodoPatch): Partial<TodoItem> => {
+    if (typeof patch.done !== "boolean") return patch;
+    if (patch.done) {
+      return { ...patch, doneAt: todo?.doneAt ?? new Date().toISOString() };
+    }
+    return { ...patch, doneAt: null };
   };
   const optimisticRemove = (id: string) => {
     queryClient.setQueryData<TodoItem[]>(listTodosQueryKey(), (prev = []) =>
@@ -253,7 +277,8 @@ export const FlodoBoard: React.FC = () => {
     onMutate: async ({ path, body }) => {
       await queryClient.cancelQueries({ queryKey: listTodosQueryKey() });
       const snapshot = queryClient.getQueryData<TodoItem[]>(listTodosQueryKey());
-      optimisticUpdate(path.id, body as TodoPatch);
+      const current = snapshot?.find((todo) => todo.id === path.id);
+      optimisticUpdate(path.id, optimisticPatch(current, body as TodoPatch));
       return { snapshot };
     },
     onError: (_err, _vars, ctx) => {
@@ -399,7 +424,8 @@ export const FlodoBoard: React.FC = () => {
             : { bucket: bucketId as TodoItem["bucket"], done: false as const };
 
         if (!navigator.onLine) {
-          optimisticUpdate(id, patch);
+          const current = todos.find((todo) => todo.id === id);
+          optimisticUpdate(id, optimisticPatch(current, patch));
           enqueue({ id: opId(), type: "update", todoId: id, patch });
           return;
         }
@@ -414,7 +440,7 @@ export const FlodoBoard: React.FC = () => {
       };
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [updateMutation],
+    [updateMutation, todos],
   );
 
   const handleDragOver = useCallback((event: React.DragEvent) => {
@@ -537,7 +563,7 @@ export const FlodoBoard: React.FC = () => {
                           onToggleDone={() => {
                             const patch: TodoPatch = { done: !todo.done };
                             if (!navigator.onLine) {
-                              optimisticUpdate(todo.id, patch);
+                              optimisticUpdate(todo.id, optimisticPatch(todo, patch));
                               enqueue({ id: opId(), type: "update", todoId: todo.id, patch });
                               return;
                             }

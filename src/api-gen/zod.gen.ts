@@ -29,6 +29,7 @@ export const zTodoItem = z.object({
     createdAt: z.iso.datetime(),
     description: z.string(),
     done: z.boolean(),
+    doneAt: z.iso.datetime().nullable().optional(),
     id: z.uuid(),
     title: z.string()
 });
